@@ -26,13 +26,13 @@ const DinoGame = () => {
     gameSpeed: 5,
   })
 
-  const CANVAS_WIDTH = 800
-  const CANVAS_HEIGHT = 200
+  const CANVAS_WIDTH = 1200
+  const CANVAS_HEIGHT = 300
   const DINO_WIDTH = 40
   const DINO_HEIGHT = 50
   const GROUND_HEIGHT = 20
   const GRAVITY = 0.6
-  const JUMP_STRENGTH = -12
+  const JUMP_STRENGTH = -10
 
   // Load high score from localStorage
   useEffect(() => {
