@@ -20,8 +20,8 @@ export class Game {
     // Game state
     this.gameRunning = false;
     this.gameOver = false;
-    this.gameSpeed = 3;
-    this.gravity = 0.6;
+    this.gameSpeed = 2;
+    this.gravity = 0.5;
     this.frameCount = 0;
     this.animationId = null;
     this.powerUpCount = 0;
@@ -102,7 +102,7 @@ export class Game {
     this.powerUps = [];
     this.bullets = [];
     this.scoreManager.reset();
-    this.gameSpeed = 3;
+    this.gameSpeed = 2;
     this.frameCount = 0;
     this.powerUpCount = 0;
     this.gameOver = false;
