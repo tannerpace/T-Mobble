@@ -52,6 +52,7 @@ export class Game {
    */
   setupInputCallbacks() {
     this.inputHandler.onJump = () => this.handleJumpAction();
+    this.inputHandler.onJumpRelease = () => this.handleJumpRelease();
     this.inputHandler.onShoot = () => this.handleShootAction();
   }
 
@@ -65,6 +66,15 @@ export class Game {
       this.restartGame();
     } else if (this.gameRunning) {
       this.dino.jump();
+    }
+  }
+
+  /**
+   * Handle jump button release
+   */
+  handleJumpRelease() {
+    if (this.gameRunning && !this.gameOver) {
+      this.dino.releaseJump();
     }
   }
 

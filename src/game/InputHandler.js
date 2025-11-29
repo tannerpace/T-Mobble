@@ -8,9 +8,12 @@ export class InputHandler {
     this.shootBtn = shootBtn;
 
     this.onJump = null;
+    this.onJumpRelease = null;
     this.onShoot = null;
     this.onStartGame = null;
     this.onRestartGame = null;
+
+    this.jumpKeyPressed = false;
 
     this.setupKeyboardControls();
     this.setupTouchControls();
@@ -24,12 +27,23 @@ export class InputHandler {
     document.addEventListener('keydown', (e) => {
       if (e.code === 'Space' || e.code === 'ArrowUp') {
         e.preventDefault();
-        if (this.onJump) this.onJump();
+        if (!this.jumpKeyPressed) {
+          this.jumpKeyPressed = true;
+          if (this.onJump) this.onJump();
+        }
       }
 
       if (e.code === 'KeyZ') {
         e.preventDefault();
         if (this.onShoot) this.onShoot();
+      }
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
+        this.jumpKeyPressed = false;
+        if (this.onJumpRelease) this.onJumpRelease();
       }
     });
   }
@@ -52,13 +66,20 @@ export class InputHandler {
       if (this.onJump) this.onJump();
     };
 
+    const handleJumpRelease = (e) => {
+      e.preventDefault();
+      if (this.onJumpRelease) this.onJumpRelease();
+    };
+
     const handleShoot = (e) => {
       e.preventDefault();
       if (this.onShoot) this.onShoot();
     };
 
     this.jumpBtn.addEventListener('touchstart', handleJump);
-    this.jumpBtn.addEventListener('click', handleJump);
+    this.jumpBtn.addEventListener('mousedown', handleJump);
+    this.jumpBtn.addEventListener('touchend', handleJumpRelease);
+    this.jumpBtn.addEventListener('mouseup', handleJumpRelease);
 
     this.shootBtn.addEventListener('touchstart', handleShoot);
     this.shootBtn.addEventListener('click', handleShoot);

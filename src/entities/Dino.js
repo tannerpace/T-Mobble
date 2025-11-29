@@ -19,6 +19,9 @@ export class Dino {
     this.jumpPower = -12;
     this.grounded = false;
     this.jumping = false;
+    this.jumpHoldTime = 0;
+    this.maxJumpHoldTime = 15; // frames
+    this.isHoldingJump = false;
   }
 
   draw(ctx) {
@@ -35,12 +38,21 @@ export class Dino {
   update() {
     // Apply gravity
     if (this.y < 150) {
-      this.dy += this.gravity;
+      // Variable jump: if not holding jump and moving upward, cut the jump short
+      if (this.jumping && !this.isHoldingJump && this.dy < 0) {
+        // Immediately reduce upward velocity when releasing jump button
+        this.dy += this.gravity * 2; // Much faster falloff
+      } else {
+        // Normal gravity
+        this.dy += this.gravity;
+      }
+
       this.grounded = false;
     } else {
       this.y = 150;
       this.grounded = true;
       this.jumping = false;
+      this.jumpHoldTime = 0;
       if (this.dy > 0) {
         this.dy = 0;
       }
@@ -54,6 +66,8 @@ export class Dino {
     if (this.grounded && !this.jumping) {
       this.dy = this.jumpPower;
       this.jumping = true;
+      this.isHoldingJump = true;
+      this.jumpHoldTime = 0;
       console.log('JUMP! dy set to:', this.dy);
 
       // Play jump sound
@@ -64,10 +78,19 @@ export class Dino {
     }
   }
 
+  /**
+   * Called when jump button is released
+   */
+  releaseJump() {
+    this.isHoldingJump = false;
+  }
+
   reset() {
     this.y = 150;
     this.dy = 0;
     this.jumping = false;
     this.grounded = false;
+    this.jumpHoldTime = 0;
+    this.isHoldingJump = false;
   }
 }
