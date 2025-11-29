@@ -43,6 +43,9 @@ export class Game {
     this.inputHandler = new InputHandler(canvas, jumpBtn, shootBtn);
     this.setupInputCallbacks();
 
+    // Leaderboard UI
+    this.setupLeaderboardUI();
+
     // Update UI
     this.updateScoreDisplay();
   }
@@ -279,9 +282,11 @@ export class Game {
         this.gameOver = true;
         this.gameRunning = false;
 
-        // Update high score
+        // Update high score and prompt for leaderboard submission
         if (this.scoreManager.updateHighScore()) {
           this.updateScoreDisplay();
+          // Prompt user to submit score to global leaderboard
+          setTimeout(() => this.promptScoreSubmission(), 500);
         }
       }
 
@@ -346,5 +351,167 @@ export class Game {
   start() {
     console.log('Starting game loop...');
     this.gameLoop();
+  }
+
+  /**
+   * Setup leaderboard UI event handlers
+   */
+  setupLeaderboardUI() {
+    const toggleBtn = document.getElementById('toggleLeaderboard');
+    const closeBtn = document.getElementById('closeLeaderboard');
+    const leaderboardContainer = document.getElementById('leaderboardContainer');
+    const nameModal = document.getElementById('nameModal');
+    const submitBtn = document.getElementById('submitScore');
+    const skipBtn = document.getElementById('skipSubmit');
+    const playerNameInput = document.getElementById('playerNameInput');
+
+    // Toggle leaderboard display
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        if (leaderboardContainer.style.display === 'none') {
+          this.showLeaderboard();
+        } else {
+          leaderboardContainer.style.display = 'none';
+        }
+      });
+    }
+
+    // Close leaderboard
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        leaderboardContainer.style.display = 'none';
+      });
+    }
+
+    // Submit score
+    if (submitBtn) {
+      submitBtn.addEventListener('click', async () => {
+        const name = playerNameInput.value.trim();
+        if (name) {
+          await this.submitPlayerScore(name);
+        }
+      });
+    }
+
+    // Skip submission
+    if (skipBtn) {
+      skipBtn.addEventListener('click', () => {
+        nameModal.style.display = 'none';
+      });
+    }
+
+    // Submit on Enter key
+    if (playerNameInput) {
+      playerNameInput.addEventListener('keypress', async (e) => {
+        if (e.key === 'Enter') {
+          const name = playerNameInput.value.trim();
+          if (name) {
+            await this.submitPlayerScore(name);
+          }
+        }
+      });
+    }
+  }
+
+  /**
+   * Show leaderboard and fetch scores
+   */
+  async showLeaderboard() {
+    const container = document.getElementById('leaderboardContainer');
+    const content = document.getElementById('leaderboardContent');
+
+    container.style.display = 'block';
+    content.innerHTML = '<p class="loading">Loading...</p>';
+
+    try {
+      const data = await this.scoreManager.fetchLeaderboard();
+
+      if (data.success && data.scores && data.scores.length > 0) {
+        const top10 = data.scores.slice(0, 10);
+        let html = '<ul class="leaderboard-list">';
+
+        top10.forEach((entry, index) => {
+          const rank = index + 1;
+          const topClass = rank <= 3 ? ' top-3' : '';
+          const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+
+          html += `
+            <li class="leaderboard-item${topClass}">
+              <span class="leaderboard-rank">${medal} #${rank}</span>
+              <span class="leaderboard-name">${this.escapeHtml(entry.name)}</span>
+              <span class="leaderboard-score">${entry.score}</span>
+            </li>
+          `;
+        });
+
+        html += '</ul>';
+        content.innerHTML = html;
+      } else {
+        content.innerHTML = '<p class="empty">No scores yet. Be the first!</p>';
+      }
+    } catch (error) {
+      console.error('Error loading leaderboard:', error);
+      content.innerHTML = '<p class="error">Failed to load leaderboard</p>';
+    }
+  }
+
+  /**
+   * Prompt user to submit score after new high score
+   */
+  promptScoreSubmission() {
+    const modal = document.getElementById('nameModal');
+    const input = document.getElementById('playerNameInput');
+    const result = document.getElementById('submitResult');
+
+    if (modal && input) {
+      // Pre-fill with saved name
+      input.value = this.scoreManager.playerName || '';
+      result.textContent = '';
+      result.className = 'submit-result';
+      modal.style.display = 'flex';
+      input.focus();
+    }
+  }
+
+  /**
+   * Submit player score to leaderboard
+   */
+  async submitPlayerScore(name) {
+    const result = document.getElementById('submitResult');
+    const modal = document.getElementById('nameModal');
+
+    result.textContent = 'Submitting...';
+    result.className = 'submit-result';
+
+    try {
+      const response = await this.scoreManager.submitToLeaderboard(name);
+
+      if (response.success) {
+        result.textContent = `🎉 Rank #${response.rank} of ${response.total}!`;
+        result.className = 'submit-result success';
+
+        // Close modal after 2 seconds
+        setTimeout(() => {
+          modal.style.display = 'none';
+          // Automatically show leaderboard
+          this.showLeaderboard();
+        }, 2000);
+      } else {
+        result.textContent = 'Failed to submit: ' + (response.error || 'Unknown error');
+        result.className = 'submit-result error';
+      }
+    } catch (error) {
+      result.textContent = 'Error: ' + error.message;
+      result.className = 'submit-result error';
+    }
+  }
+
+  /**
+   * Escape HTML to prevent XSS
+   */
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 }

@@ -166,3 +166,221 @@ body {
         font-size: 20px;
     }
 }
+
+/* Leaderboard Section */
+.leaderboard-section {
+    margin-top: 20px;
+}
+
+.leaderboard-btn {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    font-family: 'Courier New', monospace;
+}
+
+.leaderboard-btn:hover {
+    background: #45a049;
+}
+
+.leaderboard-btn:active {
+    transform: scale(0.98);
+}
+
+.leaderboard-container {
+    margin-top: 15px;
+    background: #f9f9f9;
+    border: 2px solid #535353;
+    border-radius: 8px;
+    padding: 15px;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.leaderboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #535353;
+    padding-bottom: 10px;
+}
+
+.leaderboard-header h3 {
+    margin: 0;
+    color: #535353;
+    font-size: 18px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn:hover {
+    color: #333;
+}
+
+.leaderboard-content {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.leaderboard-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.leaderboard-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    margin: 5px 0;
+    background: white;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.leaderboard-item.top-3 {
+    background: #fff9e6;
+    border-color: #ffd700;
+}
+
+.leaderboard-rank {
+    font-weight: bold;
+    color: #666;
+    min-width: 30px;
+}
+
+.leaderboard-name {
+    flex: 1;
+    text-align: left;
+    padding: 0 10px;
+    color: #333;
+}
+
+.leaderboard-score {
+    font-weight: bold;
+    color: #4CAF50;
+}
+
+.loading, .error, .empty {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+.error {
+    color: #f44336;
+}
+
+/* Modal for name input */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    color: #535353;
+}
+
+.modal-content p {
+    margin: 15px 0;
+    color: #666;
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 2px solid #535353;
+    border-radius: 5px;
+    font-family: 'Courier New', monospace;
+    margin: 10px 0;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.modal-btn {
+    flex: 1;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    transition: all 0.2s ease;
+}
+
+.modal-btn.primary {
+    background: #4CAF50;
+    color: white;
+}
+
+.modal-btn.primary:hover {
+    background: #45a049;
+}
+
+.modal-btn:not(.primary) {
+    background: #e0e0e0;
+    color: #666;
+}
+
+.modal-btn:not(.primary):hover {
+    background: #d0d0d0;
+}
+
+.submit-result {
+    margin-top: 15px;
+    font-weight: bold;
+    min-height: 20px;
+}
+
+.submit-result.success {
+    color: #4CAF50;
+}
+
+.submit-result.error {
+    color: #f44336;
+}

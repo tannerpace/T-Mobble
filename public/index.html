@@ -40,6 +40,34 @@
       <p>Press <strong>SPACE</strong> or <strong>↑</strong> to jump | <strong>Z</strong> to shoot</p>
       <p>Press <strong>SPACE</strong> to restart | Mobile: Tap <strong>↑</strong> / <strong>⚡</strong></p>
     </div>
+
+    <!-- Global Leaderboard -->
+    <div class="leaderboard-section">
+      <button id="toggleLeaderboard" class="leaderboard-btn">🏆 Global Leaderboard</button>
+      <div id="leaderboardContainer" class="leaderboard-container" style="display: none;">
+        <div class="leaderboard-header">
+          <h3>Top 10 Players</h3>
+          <button id="closeLeaderboard" class="close-btn">✕</button>
+        </div>
+        <div id="leaderboardContent" class="leaderboard-content">
+          <p class="loading">Loading...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Name prompt modal -->
+  <div id="nameModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <h2>🎉 New High Score!</h2>
+      <p>Enter your name for the global leaderboard:</p>
+      <input type="text" id="playerNameInput" maxlength="20" placeholder="Your Name">
+      <div class="modal-buttons">
+        <button id="submitScore" class="modal-btn primary">Submit</button>
+        <button id="skipSubmit" class="modal-btn">Skip</button>
+      </div>
+      <p id="submitResult" class="submit-result"></p>
+    </div>
   </div>
   <script type="module" src="../src/main.js"></script>
   <script>
