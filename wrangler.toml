@@ -1,0 +1,17 @@
+# Cloudflare Workers configuration for T-Mobble Leaderboard
+# Documentation: https://developers.cloudflare.com/workers/
+
+name = "t-mobble-leaderboard"
+main = "worker.js"
+compatibility_date = "2024-11-29"
+
+# KV namespace binding
+# After creating KV namespace, update the id below
+[[kv_namespaces]]
+binding = "LEADERBOARD"
+id = "YOUR_KV_NAMESPACE_ID_HERE"
+
+# Uncomment for preview environment
+# [[kv_namespaces]]
+# binding = "LEADERBOARD"
+# preview_id = "YOUR_PREVIEW_KV_NAMESPACE_ID_HERE"
