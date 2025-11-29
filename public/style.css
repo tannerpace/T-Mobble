@@ -23,7 +23,7 @@ body {
 .game-container {
     text-align: center;
     background: white;
-    padding: 20px;
+    padding: 15px;
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     max-width: 100%;
@@ -34,6 +34,7 @@ body {
     .game-container {
         width: auto;
         max-width: none;
+        padding: 20px;
     }
 }
 
@@ -58,14 +59,9 @@ body {
     cursor: pointer;
     max-width: 100%;
     height: auto;
-    width: 100%;
 }
 
-@media (min-width: 840px) {
-    #gameCanvas {
-        width: 800px;
-    }
-}
+/* JavaScript handles canvas sizing dynamically */
 
 .instructions {
     margin-top: 15px;

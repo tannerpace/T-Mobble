@@ -24,10 +24,19 @@ function resizeCanvas() {
   // Set display size (CSS pixels) while maintaining internal resolution
   canvas.style.width = (GAME_WIDTH * scale) + 'px';
   canvas.style.height = (GAME_HEIGHT * scale) + 'px';
+
+  console.log('Canvas resized - Container:', containerWidth, 'Scale:', scale);
 }
 
-// Initial resize
-resizeCanvas();
+// Wait for DOM to be ready before initial resize
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', resizeCanvas);
+} else {
+  resizeCanvas();
+}
+
+// Also resize after a short delay to ensure layout is complete
+setTimeout(resizeCanvas, 100);
 
 // Resize on window resize
 window.addEventListener('resize', resizeCanvas);
