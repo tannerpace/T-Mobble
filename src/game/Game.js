@@ -128,7 +128,8 @@ export class Game {
    * Spawn an obstacle
    */
   spawnObstacle() {
-    const minDistance = 200;
+    const minDistance = 250; // Increased from 200 for more spacing
+    const maxDistance = 400; // Add variety
     const lastObstacle = this.obstacles[this.obstacles.length - 1];
 
     if (!lastObstacle || this.canvas.width - lastObstacle.x > minDistance) {
@@ -171,8 +172,10 @@ export class Game {
     // Update dino
     this.dino.update();
 
-    // Spawn obstacles
-    if (this.frameCount % 100 === 0) {
+    // Spawn obstacles with randomized timing
+    // Random interval between 80-140 frames (was fixed at 100)
+    const spawnInterval = 80 + Math.floor(Math.random() * 60);
+    if (this.frameCount % spawnInterval === 0) {
       this.spawnObstacle();
     }
 
