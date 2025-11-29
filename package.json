@@ -4,7 +4,18 @@
   "description": "A fun, installable Progressive Web App (PWA) recreation of the classic Chrome dinosaur game. Jump over obstacles, beat your high score, and enjoy the game offline!",
   "main": "game.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "npx serve --listen 3000",
+    "build": "echo 'No build step needed for static site'",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:chromium": "playwright test --project=chromium",
+    "test:mobile": "playwright test --project='Mobile Chrome' --project='Mobile Safari'",
+    "test:responsive": "playwright test tests/responsive.spec.js",
+    "test:game": "playwright test tests/game.spec.js",
+    "test:report": "playwright show-report",
+    "test:ci": "playwright test --reporter=github",
+    "validate": "npm run test:ci"
   },
   "keywords": [
     "pwa",

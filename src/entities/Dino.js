@@ -22,12 +22,25 @@ export class Dino {
     this.jumpHoldTime = 0;
     this.maxJumpHoldTime = 15; // frames
     this.isHoldingJump = false;
+
+    // Animation
+    this.animationFrame = 0;
+    this.animationSpeed = 5; // Change animation every 5 frames
+    this.frameCount = 0;
   }
 
   draw(ctx) {
-    // Draw T-Rex image
+    // Draw T-Rex image with animation
     if (this.trexImg.complete) {
-      ctx.drawImage(this.trexImg, this.x, this.y, this.width, this.height);
+      // If grounded, apply walking animation by slightly offsetting Y position
+      // to create a bobbing effect
+      let yOffset = 0;
+      if (this.grounded && !this.jumping) {
+        // Create a subtle bobbing motion (1 pixel up and down)
+        yOffset = this.animationFrame === 0 ? 0 : -1;
+      }
+
+      ctx.drawImage(this.trexImg, this.x, this.y + yOffset, this.width, this.height);
     } else {
       // Fallback while image loads
       ctx.fillStyle = '#535353';
@@ -59,6 +72,15 @@ export class Dino {
     }
 
     this.y += this.dy;
+
+    // Update walking animation when grounded
+    if (this.grounded && !this.jumping) {
+      this.frameCount++;
+      if (this.frameCount >= this.animationSpeed) {
+        this.animationFrame = (this.animationFrame + 1) % 2; // Toggle between 0 and 1
+        this.frameCount = 0;
+      }
+    }
   }
 
   jump() {
@@ -92,5 +114,7 @@ export class Dino {
     this.grounded = false;
     this.jumpHoldTime = 0;
     this.isHoldingJump = false;
+    this.animationFrame = 0;
+    this.frameCount = 0;
   }
 }

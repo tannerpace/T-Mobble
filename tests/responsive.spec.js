@@ -152,25 +152,55 @@ test.describe('Responsive Layout Tests', () => {
   });
 
   test('mobile buttons positioning', async ({ page }) => {
+    // Test portrait mode - buttons should be below canvas
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/public/index.html');
 
     const jumpBtn = page.locator('#jumpBtn');
     const shootBtn = page.locator('#shootBtn');
     const canvas = page.locator('#gameCanvas');
+    const mobileControls = page.locator('.mobile-controls');
 
     const canvasBox = await canvas.boundingBox();
     const jumpBox = await jumpBtn.boundingBox();
     const shootBox = await shootBtn.boundingBox();
+    const controlsBox = await mobileControls.boundingBox();
 
-    // Jump button should be on left side
-    expect(jumpBox.x).toBeLessThan(canvasBox.x + 100);
+    // In portrait mode, buttons should be below the canvas
+    expect(controlsBox.y).toBeGreaterThan(canvasBox.y + canvasBox.height);
 
-    // Shoot button should be on right side
-    expect(shootBox.x).toBeGreaterThan(canvasBox.x + canvasBox.width - 100);
+    // Buttons should be horizontally separated
+    expect(shootBox.x).toBeGreaterThan(jumpBox.x + jumpBox.width);
 
-    // Both buttons should be near bottom
-    expect(jumpBox.y).toBeGreaterThan(canvasBox.y + canvasBox.height - 80);
-    expect(shootBox.y).toBeGreaterThan(canvasBox.y + canvasBox.height - 80);
+    // Both buttons should be visible
+    await expect(jumpBtn).toBeVisible();
+    await expect(shootBtn).toBeVisible();
+  });
+
+  test('mobile buttons positioning - landscape mode', async ({ page }) => {
+    // Test landscape mode - buttons should overlay canvas
+    await page.setViewportSize({ width: 667, height: 375 });
+    await page.goto('/public/index.html');
+
+    const jumpBtn = page.locator('#jumpBtn');
+    const shootBtn = page.locator('#shootBtn');
+
+    // Buttons should be visible in landscape
+    await expect(jumpBtn).toBeVisible();
+    await expect(shootBtn).toBeVisible();
+
+    const jumpBox = await jumpBtn.boundingBox();
+    const shootBox = await shootBtn.boundingBox();
+
+    // In landscape mode with touch devices, buttons overlay the game
+    // Jump button should be on left
+    expect(jumpBox.x).toBeLessThan(shootBox.x);
+
+    // Shoot button should be on right  
+    expect(shootBox.x).toBeGreaterThan(jumpBox.x + jumpBox.width);
+
+    // Both buttons should be visible and clickable
+    await expect(jumpBtn).toBeEnabled();
+    await expect(shootBtn).toBeEnabled();
   });
 });

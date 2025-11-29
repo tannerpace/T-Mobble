@@ -4,6 +4,7 @@
 
 A fun, installable Progressive Web App (PWA) recreation of the classic Chrome dinosaur game. Jump over obstacles, collect power-ups, shoot bullets, and beat your high score - all offline!
 
+![Build Status](https://github.com/tannerpace/T-Mobble/actions/workflows/deploy.yml/badge.svg)
 ![T-Mobble Game](https://img.shields.io/badge/game-playable-brightgreen)
 
 ## Setup on Chromebook (No Linux Required)
