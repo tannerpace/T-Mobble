@@ -38,4 +38,6 @@ _*.m4a
 _*.png
 2025_*.png
 lil_raptor.png
+game.js.backup
+manifest-template.json
 

@@ -13,6 +13,14 @@ const ENV_CONFIG = {
   // Get the base path based on environment
   getBasePath: () => {
     const isVSCode = ENV_CONFIG.isVSCodeDev() || ENV_CONFIG.isVSCodeCom();
+    const isLocalhost = window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.hostname === '';
+
+    // Local development - use root path
+    if (isLocalhost && !isVSCode) {
+      return '';
+    }
 
     if (isVSCode) {
       // For vscode.dev/vscode.com, use the repository structure
@@ -29,7 +37,7 @@ const ENV_CONFIG = {
       return '/T-Mobble';
     }
 
-    // Default path for GitHub Pages or local development
+    // Default path for GitHub Pages
     return '/T-Mobble';
   },
 
