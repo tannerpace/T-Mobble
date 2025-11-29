@@ -11,6 +11,13 @@ body {
     align-items: center;
     min-height: 100vh;
     background: #f7f7f7;
+    padding: 10px;
+}
+
+@media (min-width: 880px) {
+    body {
+        padding: 0;
+    }
 }
 
 .game-container {
@@ -19,6 +26,15 @@ body {
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-width: 100%;
+    width: 100%;
+}
+
+@media (min-width: 880px) {
+    .game-container {
+        width: auto;
+        max-width: none;
+    }
 }
 
 .score-container {
@@ -40,6 +56,15 @@ body {
     display: block;
     margin: 0 auto;
     cursor: pointer;
+    max-width: 100%;
+    height: auto;
+    width: 100%;
+}
+
+@media (min-width: 840px) {
+    #gameCanvas {
+        width: 800px;
+    }
 }
 
 .instructions {
