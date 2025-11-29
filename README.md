@@ -1,6 +1,6 @@
 # dino jump knock-off
 ## no wifi game
-#### Needs wifi
+#### Needs wifi https://tannerpace.github.io/T-Mobble/
 
 A fun, installable Progressive Web App (PWA) recreation of the classic Chrome dinosaur game. Jump over obstacles, collect power-ups, shoot bullets, and beat your high score - all offline!
 
