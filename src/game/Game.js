@@ -258,6 +258,10 @@ export class Game {
           this.obstacles.splice(j, 1);
           this.bullets.splice(i, 1);
           console.log('Hit! Obstacle destroyed.');
+
+          // Play hit sound
+          this.assets.hitSound.currentTime = 0;
+          this.assets.hitSound.play().catch(e => console.log('Audio play failed:', e));
           break;
         }
       }
@@ -281,6 +285,10 @@ export class Game {
       if (checkCollision(this.dino, obstacle)) {
         this.gameOver = true;
         this.gameRunning = false;
+
+        // Play end sound
+        this.assets.endSound.currentTime = 0;
+        this.assets.endSound.play().catch(e => console.log('Audio play failed:', e));
 
         // Update high score and prompt for leaderboard submission
         if (this.scoreManager.updateHighScore()) {
