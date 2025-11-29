@@ -136,6 +136,25 @@ If the original repository gets updates, you can sync your fork:
 - 🎨 Retro pixel-art style graphics
 - 📱 Perfect for Chromebooks and mobile devices
 - 🎵 Sound effects for jumps and power-ups
+- 🏗️ Modular ES6 architecture
+- 🧩 Clean, organized codebase
+
+## Project Structure
+
+This project follows modern JavaScript best practices with a modular architecture:
+
+```
+T-Mobble/
+├── assets/           # Game assets (audio, images, icons)
+├── public/           # Public files (HTML, CSS, manifest)
+├── src/              # Source code (ES6 modules)
+│   ├── entities/     # Game entities (Dino, Obstacle, etc.)
+│   ├── game/         # Core game systems
+│   └── utils/        # Utility modules
+└── tools/            # Development tools
+```
+
+For detailed architecture documentation, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## License
 
