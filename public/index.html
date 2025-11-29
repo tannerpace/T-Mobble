@@ -9,10 +9,10 @@
   <title>Chrome Dino Game Clone</title>
 
   <!-- PWA Manifest -->
-  <link rel="manifest" href="/T-Mobble/manifest.json">
+  <link rel="manifest" href="/T-Mobble/public/manifest.json">
 
   <!-- Apple Touch Icon -->
-  <link rel="apple-touch-icon" href="/T-Mobble/icon-192.png">
+  <link rel="apple-touch-icon" href="/T-Mobble/assets/icons/icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Dino Game">
@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="style.css">
 
   <!-- Environment Configuration -->
-  <script src="config.js"></script>
+  <script src="../config.js"></script>
 </head>
 
 <body>
@@ -39,18 +39,18 @@
       <p>Press <strong>SPACE</strong> to restart | Mobile: Tap <strong>↑</strong> / <strong>⚡</strong></p>
     </div>
   </div>
-  <script src="game.js"></script>
+  <script type="module" src="../src/main.js"></script>
   <script>
     // Update manifest path dynamically based on environment
     if (window.ENV_CONFIG) {
       const manifestLink = document.querySelector('link[rel="manifest"]');
       if (manifestLink) {
-        manifestLink.href = ENV_CONFIG.getAssetPath('manifest.json');
+        manifestLink.href = ENV_CONFIG.getAssetPath('public/manifest.json');
       }
 
       const appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
       if (appleIcon) {
-        appleIcon.href = ENV_CONFIG.getAssetPath('icon-192.png');
+        appleIcon.href = ENV_CONFIG.getAssetPath('assets/icons/icon-192.png');
       }
     }
 

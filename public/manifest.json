@@ -9,13 +9,13 @@
   "orientation": "landscape",
   "icons": [
     {
-      "src": "/T-Mobble/icon-192.png",
+      "src": "/T-Mobble/assets/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/T-Mobble/icon-512.png",
+      "src": "/T-Mobble/assets/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
