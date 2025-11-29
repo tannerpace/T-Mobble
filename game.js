@@ -19,7 +19,7 @@ console.log('Game initialized. gameRunning:', gameRunning, 'gameOver:', gameOver
 // Audio
 const jumpSound = new Audio('pop.m4a');
 jumpSound.volume = 0.5;
-const powerUpSound = new Audio('yum yum.m4a');
+const powerUpSound = new Audio('yumyum.m4a');
 powerUpSound.volume = 0.5;
 
 // Load images

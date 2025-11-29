@@ -26,11 +26,11 @@ const ENV_CONFIG = {
       }
 
       // Otherwise, use the repository name
-      return '/t-mobile';
+      return '/T-Mobble';
     }
 
     // Default path for GitHub Pages or local development
-    return '/t-mobile';
+    return '/T-Mobble';
   },
 
   // Get full asset path

@@ -11,10 +11,10 @@ const getBasePath = () => {
       const githubIndex = pathParts.indexOf('github');
       return '/' + pathParts.slice(0, githubIndex + 3).join('/');
     }
-    return '/t-mobile';
+    return '/T-Mobble';
   }
 
-  return '/t-mobile';
+  return '/T-Mobble';
 };
 
 const BASE_PATH = getBasePath();
