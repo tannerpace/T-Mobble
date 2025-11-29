@@ -1,5 +1,15 @@
 # Development Guide
 
+## ⚠️ Important: Cache Version Updates
+
+**Before deploying ANY changes to GitHub Pages**, you must increment the cache version in `service-worker.js`:
+
+```javascript
+const CACHE_NAME = 'dino-game-v4'; // Change v3 → v4
+```
+
+This forces browsers to refresh cached files. If you don't update this, users won't see your changes!
+
 ## Quick Start
 
 ### Running Locally
