@@ -139,6 +139,8 @@ test.describe('Responsive Layout Tests', () => {
   test('ultra-wide desktop - content should be centered', async ({ page }) => {
     await page.setViewportSize({ width: 2560, height: 1440 });
     await page.goto('/public/index.html');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(500);
 
     // Canvas should maintain its size
     const canvas = page.locator('#gameCanvas');
