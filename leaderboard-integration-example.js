@@ -46,7 +46,7 @@ async function displayGlobalLeaderboard(game) {
     if (data.success && data.scores.length > 0) {
       let html = '<h2>Global Leaderboard</h2><ol>';
 
-      data.scores.slice(0, 10).forEach(entry => {
+      data.scores.slice(0, 50).forEach(entry => {
         const date = new Date(entry.timestamp).toLocaleDateString();
         html += `<li><strong>${entry.name}</strong> - ${entry.score} <small>(${date})</small></li>`;
       });
