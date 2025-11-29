@@ -53,5 +53,9 @@ const assets = assetManager.loadGameAssets();
 
 // Create and start game
 const game = new Game(canvas, assets);
+
+// Configure global leaderboard
+game.scoreManager.setLeaderboardApi('https://t-mobble-leaderboard.tannerpace.workers.dev');
+
 game.start();
 

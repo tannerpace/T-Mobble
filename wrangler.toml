@@ -6,10 +6,9 @@ main = "worker.js"
 compatibility_date = "2024-11-29"
 
 # KV namespace binding
-# After creating KV namespace, update the id below
 [[kv_namespaces]]
 binding = "LEADERBOARD"
-id = "YOUR_KV_NAMESPACE_ID_HERE"
+id = "49c255cccd6841708a4219f3bbc773a0"
 
 # Uncomment for preview environment
 # [[kv_namespaces]]
