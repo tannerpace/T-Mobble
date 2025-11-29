@@ -1,0 +1,15 @@
+{
+  "name": "t-mobile",
+  "version": "1.0.0",
+  "description": "A fun, installable Progressive Web App (PWA) recreation of the classic Chrome dinosaur game. Jump over obstacles, beat your high score, and enjoy the game offline!",
+  "main": "game.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "canvas": "^3.2.0"
+  }
+}
