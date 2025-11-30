@@ -10,6 +10,7 @@ import { PowerUp } from '../entities/PowerUp.js';
 import { TankEnemy } from '../entities/TankEnemy.js';
 import { XPGem } from '../entities/XPGem.js';
 import { ExperienceManager } from '../utils/ExperienceManager.js';
+import { ParticleSystem, ScreenShake } from '../utils/ParticleSystem.js';
 import { ScoreManager } from '../utils/ScoreManager.js';
 import { UpgradeSystem } from '../utils/UpgradeSystem.js';
 import { WeaponSystem } from '../utils/WeaponSystem.js';
@@ -42,6 +43,8 @@ export class Game {
     this.xpManager = new ExperienceManager();
     this.upgradeSystem = new UpgradeSystem();
     this.weaponSystem = new WeaponSystem();
+    this.particleSystem = new ParticleSystem();
+    this.screenShake = new ScreenShake();
 
     // Entities
     this.dino = new Dino(canvas, this.gravity, assets);
@@ -496,6 +499,10 @@ export class Game {
     this.updateEnemies();
     this.updateXPGems(effects);
 
+    // Update particle system
+    this.particleSystem.update();
+    this.screenShake.update();
+
     // Update score with speed modifier
     const speedModifier = effects.speedMod || 1;
     this.scoreManager.increment();
@@ -520,6 +527,14 @@ export class Game {
         powerUp.collected = true;
         this.powerUpCount += 1;
         console.log('Coin collected! Total:', this.powerUpCount);
+
+        // Gold coin particles
+        this.particleSystem.spawnParticles(
+          powerUp.x + powerUp.width / 2,
+          powerUp.y + powerUp.height / 2,
+          ParticleSystem.COLORS.COIN_COLLECT,
+          10
+        );
 
         // Play bling sound for coins
         this.assets.blingSound.currentTime = 0;
@@ -559,6 +574,15 @@ export class Game {
         const xpValue = gem.collect();
         const xpMultiplier = effects.xpMultiplier || 1;
         this.xpManager.addXP(Math.floor(xpValue * xpMultiplier));
+
+        // Cyan/blue XP particles
+        this.particleSystem.spawnParticles(
+          gem.x,
+          gem.y,
+          ParticleSystem.COLORS.XP_COLLECT,
+          8
+        );
+
         this.xpGems.splice(i, 1);
         continue;
       }
@@ -594,9 +618,25 @@ export class Game {
           const enemyDied = enemy.takeDamage(1);
 
           if (enemyDied) {
+            // Enemy death - big explosion
+            this.particleSystem.spawnParticles(
+              enemy.x + enemy.width / 2,
+              enemy.y + enemy.height / 2,
+              ParticleSystem.COLORS.ENEMY_DEATH,
+              15 // More particles for death
+            );
             this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
             this.enemies.splice(j, 1);
-            this.renderer.screenShake(3, 5); // Small shake on kill
+            this.screenShake.shake(8, 150); // Bigger shake on kill
+          } else {
+            // Enemy hit - small explosion
+            this.particleSystem.spawnParticles(
+              bullet.x,
+              bullet.y,
+              ParticleSystem.COLORS.ENEMY_HIT,
+              8
+            );
+            this.screenShake.shake(3, 75); // Small shake on hit
           }
 
           // Play hit sound
@@ -625,8 +665,24 @@ export class Game {
       const enemyDied = enemy.takeDamage(1);
 
       if (enemyDied) {
+        // Enemy death - big explosion
+        this.particleSystem.spawnParticles(
+          enemy.x + enemy.width / 2,
+          enemy.y + enemy.height / 2,
+          ParticleSystem.COLORS.ENEMY_DEATH,
+          15
+        );
         this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
-        this.renderer.screenShake(3, 5); // Small shake on kill
+        this.screenShake.shake(8, 150); // Bigger shake on kill
+      } else {
+        // Enemy hit - small explosion
+        this.particleSystem.spawnParticles(
+          enemy.x + enemy.width / 2,
+          enemy.y + enemy.height / 2,
+          ParticleSystem.COLORS.ENEMY_HIT,
+          8
+        );
+        this.screenShake.shake(3, 75); // Small shake on hit
       }
 
       // Play hit sound
@@ -644,8 +700,15 @@ export class Game {
       if (checkCollision(this.dino, enemy)) {
         const damageTaken = this.dino.takeDamage();
         if (damageTaken) {
+          // Player damage - bright red/white explosion
+          this.particleSystem.spawnParticles(
+            this.dino.x + this.dino.width / 2,
+            this.dino.y + this.dino.height / 2,
+            ParticleSystem.COLORS.PLAYER_DAMAGE,
+            12
+          );
           this.updateHealthDisplay();
-          this.renderer.screenShake(8, 15); // Shake on damage
+          this.screenShake.shake(12, 200); // Big shake on player damage
 
           // Check if dino died
           if (this.dino.isDead()) {
@@ -722,6 +785,11 @@ export class Game {
    * Render all game elements
    */
   render() {
+    // Apply screen shake
+    const shakeOffset = this.screenShake.getOffset();
+    this.ctx.save();
+    this.ctx.translate(shakeOffset.x, shakeOffset.y);
+
     this.renderer.clear();
 
     // Draw clouds
@@ -736,6 +804,8 @@ export class Game {
     // Draw game state screens
     if (!this.gameRunning) {
       this.dino.draw(this.ctx);
+      this.particleSystem.draw(this.ctx); // Draw particles even on start screen
+      this.ctx.restore();
       this.renderer.drawStartScreen();
       return;
     }
@@ -743,6 +813,8 @@ export class Game {
     if (this.gameOver) {
       this.dino.draw(this.ctx);
       this.obstacles.forEach(obstacle => obstacle.draw(this.ctx));
+      this.particleSystem.draw(this.ctx); // Draw particles on game over
+      this.ctx.restore();
       this.renderer.drawGameOver();
       return;
     }
@@ -758,6 +830,12 @@ export class Game {
     // Draw weapon effects (whip arc, laser beam, etc.)
     this.weaponSystem.draw(this.ctx, this.frameCount);
 
+    // Draw particles (on top of everything)
+    this.particleSystem.draw(this.ctx);
+
+    this.ctx.restore(); // Restore after shake
+
+    // Draw UI elements (not affected by shake)
     // Draw coin counter
     this.ctx.fillStyle = '#FFD700';
     this.ctx.font = 'bold 16px Courier New';
