@@ -75,6 +75,16 @@ export class Collectible extends BaseEntity {
   }
 
   /**
+   * Override collision check to also check collected state
+   * @param {Object} entity - Entity with x, y, width, height properties
+   * @returns {boolean} True if collision detected
+   */
+  checkCollision(entity) {
+    if (this.collected) return false;
+    return super.checkCollision(entity);
+  }
+
+  /**
    * Collect this item
    * @returns {number} Value of the collected item (to be overridden)
    */

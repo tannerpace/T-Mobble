@@ -18,12 +18,18 @@ export class Coin extends Collectible {
     }
   }
 
+  /**
+   * Update coin position with custom magnet speed
+   * Coins use faster magnet speed (5) than default collectibles (4)
+   * @param {Object} dino - Target entity for magnet effect
+   * @param {number} magnetRange - Range at which magnet activates
+   */
   update(dino, magnetRange = 0) {
     if (this.collected) return;
 
     this.frameCount++;
 
-    // Apply magnet if in range (coins use slightly faster magnet speed)
+    // Apply magnet if in range (coins use faster magnet speed of 5)
     if (this.applyMagnet(dino, magnetRange, 5)) {
       return;
     }

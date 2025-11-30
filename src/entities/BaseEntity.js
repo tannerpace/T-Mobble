@@ -24,7 +24,7 @@ export class BaseEntity {
    * @returns {boolean} True if collision detected
    */
   checkCollision(entity) {
-    if (this.collected || !this.active) return false;
+    if (!this.active) return false;
 
     return (
       entity.x < this.x + this.width &&

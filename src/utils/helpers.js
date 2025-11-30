@@ -79,12 +79,13 @@ export function randomRange(min, max) {
 }
 
 /**
- * Generate a random integer in a range
+ * Generate a random integer in a range (inclusive)
  * @param {number} min - Minimum value (inclusive)
  * @param {number} max - Maximum value (inclusive)
- * @returns {number} Random integer in range
+ * @returns {number} Random integer in range [min, max]
  */
 export function randomInt(min, max) {
+  // Add 1 to max before passing to randomRange to make max inclusive
   return Math.floor(randomRange(min, max + 1));
 }
 
