@@ -25,6 +25,7 @@ export class Game {
     this.frameCount = 0;
     this.animationId = null;
     this.powerUpCount = 0;
+    this.isSubmitting = false;
 
     // Game systems
     this.renderer = new Renderer(canvas, this.ctx);
@@ -507,8 +508,14 @@ export class Game {
     const modal = document.getElementById('nameModal');
     const input = document.getElementById('playerNameInput');
     const result = document.getElementById('submitResult');
+    const submitBtn = document.getElementById('submitScore');
 
     if (modal && input) {
+      // Reset submission state for new prompt
+      this.isSubmitting = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+      }
       // Pre-fill with saved name
       input.value = this.scoreManager.playerName || '';
       result.textContent = '';
@@ -522,8 +529,20 @@ export class Game {
    * Submit player score to leaderboard
    */
   async submitPlayerScore(name) {
+    // Prevent double submissions
+    if (this.isSubmitting) {
+      return;
+    }
+
     const result = document.getElementById('submitResult');
     const modal = document.getElementById('nameModal');
+    const submitBtn = document.getElementById('submitScore');
+
+    // Disable submit button and set submitting state
+    this.isSubmitting = true;
+    if (submitBtn) {
+      submitBtn.disabled = true;
+    }
 
     result.textContent = 'Submitting...';
     result.className = 'submit-result';
@@ -544,10 +563,20 @@ export class Game {
       } else {
         result.textContent = 'Failed to submit: ' + (response.error || 'Unknown error');
         result.className = 'submit-result error';
+        // Re-enable on failure so user can retry
+        this.isSubmitting = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+        }
       }
     } catch (error) {
       result.textContent = 'Error: ' + error.message;
       result.className = 'submit-result error';
+      // Re-enable on error so user can retry
+      this.isSubmitting = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+      }
     }
   }
 
