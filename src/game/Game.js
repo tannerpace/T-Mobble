@@ -444,12 +444,17 @@ export class Game {
 
         top50.forEach((entry, index) => {
           const rank = index + 1;
-          const topClass = rank <= 3 ? ' top-3' : '';
-          const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+          const topClass = rank <= 10 ? ' top-10' : '';
+          const top3Class = rank <= 3 ? ' top-3' : '';
+          let icon = '';
+          if (rank === 1) icon = '🥇';
+          else if (rank === 2) icon = '🥈';
+          else if (rank === 3) icon = '🥉';
+          else if (rank <= 10) icon = '⭐';
 
           html += `
-            <li class="leaderboard-item${topClass}">
-              <span class="leaderboard-rank">${medal} #${rank}</span>
+            <li class="leaderboard-item${topClass}${top3Class}">
+              <span class="leaderboard-rank">${icon} #${rank}</span>
               <span class="leaderboard-name">${this.escapeHtml(entry.name)}</span>
               <span class="leaderboard-score">${entry.score}</span>
             </li>

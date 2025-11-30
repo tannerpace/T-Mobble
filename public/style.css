@@ -259,6 +259,11 @@ body {
     border: 1px solid #ddd;
 }
 
+.leaderboard-item.top-10 {
+    background: #f0f8ff;
+    border-color: #87ceeb;
+}
+
 .leaderboard-item.top-3 {
     background: #fff9e6;
     border-color: #ffd700;
