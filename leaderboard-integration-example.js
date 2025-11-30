@@ -44,15 +44,34 @@ async function displayGlobalLeaderboard(game) {
     const data = await game.scoreManager.fetchLeaderboard();
 
     if (data.success && data.scores.length > 0) {
-      let html = '<h2>Global Leaderboard</h2><ol>';
+      // Create list element
+      const h2 = document.createElement('h2');
+      h2.textContent = 'Global Leaderboard';
+
+      const ol = document.createElement('ol');
 
       data.scores.slice(0, 50).forEach(entry => {
+        const li = document.createElement('li');
+
+        const nameEl = document.createElement('strong');
+        nameEl.textContent = entry.name; // Safe: uses textContent
+
+        const scoreText = document.createTextNode(` - ${entry.score} `);
+
+        const dateEl = document.createElement('small');
         const date = new Date(entry.timestamp).toLocaleDateString();
-        html += `<li><strong>${entry.name}</strong> - ${entry.score} <small>(${date})</small></li>`;
+        dateEl.textContent = `(${date})`;
+
+        li.appendChild(nameEl);
+        li.appendChild(scoreText);
+        li.appendChild(dateEl);
+        ol.appendChild(li);
       });
 
-      html += '</ol>';
-      leaderboardDiv.innerHTML = html;
+      // Clear and append safely
+      leaderboardDiv.innerHTML = '';
+      leaderboardDiv.appendChild(h2);
+      leaderboardDiv.appendChild(ol);
     } else {
       leaderboardDiv.innerHTML = '<p>No scores yet. Be the first!</p>';
     }
