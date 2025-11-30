@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dino-game-v64';
+const CACHE_NAME = 'dino-game-v65';
 
 // Get base path dynamically
 const getBasePath = () => {
