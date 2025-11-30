@@ -12,8 +12,8 @@ export class PowerUp {
     this.speed = gameSpeed * 0.8;
     this.collected = false;
 
-    // Gold coin emoji
-    this.emoji = '🪙';
+    // money emoji
+    this.emoji = '💵';
   }
 
   draw(ctx, frameCount) {
