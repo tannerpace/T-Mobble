@@ -64,9 +64,10 @@ export class InputHandler {
       if (this.onJumpRelease) this.onJumpRelease();
     };
 
-    this.jumpBtn.addEventListener('touchstart', handleJump);
+    // Jump button
+    this.jumpBtn.addEventListener('touchstart', handleJump, { passive: false });
     this.jumpBtn.addEventListener('mousedown', handleJump);
-    this.jumpBtn.addEventListener('touchend', handleJumpRelease);
+    this.jumpBtn.addEventListener('touchend', handleJumpRelease, { passive: false });
     this.jumpBtn.addEventListener('mouseup', handleJumpRelease);
   }
 }

@@ -11,8 +11,9 @@ test.describe('Responsive Layout Tests', () => {
     await expect(canvas).toBeVisible();
 
     const canvasBox = await canvas.boundingBox();
-    expect(canvasBox.width).toBe(800);
-    expect(canvasBox.height).toBe(200);
+    // Canvas should be sized appropriately for desktop (not hardcoded to 800x200)
+    expect(canvasBox.width).toBeGreaterThan(600);
+    expect(canvasBox.width).toBeLessThanOrEqual(1400);
 
     // Check score container is visible
     await expect(page.locator('.score-container')).toBeVisible();
@@ -22,13 +23,9 @@ test.describe('Responsive Layout Tests', () => {
     // Check instructions are visible
     await expect(page.locator('.instructions')).toBeVisible();
 
-    // Mobile buttons should be hidden on desktop
+    // Mobile jump button should exist
     const jumpBtn = page.locator('#jumpBtn');
-    const shootBtn = page.locator('#shootBtn');
-
-    // Check if buttons exist but may not be visible
     await expect(jumpBtn).toHaveCount(1);
-    await expect(shootBtn).toHaveCount(1);
   });
 
   test('mobile portrait - elements should be accessible', async ({ page }) => {
@@ -49,9 +46,8 @@ test.describe('Responsive Layout Tests', () => {
     // Container should not be wider than viewport
     expect(containerBox.width).toBeLessThanOrEqual(375);
 
-    // Mobile buttons should be present
+    // Mobile jump button should be present
     await expect(page.locator('#jumpBtn')).toHaveCount(1);
-    await expect(page.locator('#shootBtn')).toHaveCount(1);
   });
 
   test('mobile landscape - game should fit without scrolling', async ({ page }) => {
@@ -71,9 +67,8 @@ test.describe('Responsive Layout Tests', () => {
     // Score should be visible
     await expect(page.locator('.score-container')).toBeVisible();
 
-    // Mobile controls should be accessible
+    // Mobile jump button should be accessible
     await expect(page.locator('#jumpBtn')).toHaveCount(1);
-    await expect(page.locator('#shootBtn')).toHaveCount(1);
   });
 
   test('tablet portrait - layout should be comfortable', async ({ page }) => {
@@ -126,9 +121,10 @@ test.describe('Responsive Layout Tests', () => {
     const canvas = page.locator('#gameCanvas');
     await expect(canvas).toBeVisible();
 
-    // Check canvas doesn't cause horizontal scroll
+    // Check canvas doesn't cause horizontal scroll - now supports smaller sizes
     const canvasBox = await canvas.boundingBox();
     expect(canvasBox.width).toBeLessThanOrEqual(320);
+    expect(canvasBox.width).toBeGreaterThanOrEqual(280); // Minimum responsive size
 
     // Game container should fit
     const gameContainer = page.locator('.game-container');
@@ -153,56 +149,36 @@ test.describe('Responsive Layout Tests', () => {
     expect(canvasBox.x).toBeGreaterThan(bodyWidth / 4);
   });
 
-  test('mobile buttons positioning', async ({ page }) => {
-    // Test portrait mode - buttons should be below canvas
+  test('mobile button positioning', async ({ page }) => {
+    // Test portrait mode - button should be below canvas
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/public/index.html');
 
     const jumpBtn = page.locator('#jumpBtn');
-    const shootBtn = page.locator('#shootBtn');
     const canvas = page.locator('#gameCanvas');
     const mobileControls = page.locator('.mobile-controls');
 
     const canvasBox = await canvas.boundingBox();
-    const jumpBox = await jumpBtn.boundingBox();
-    const shootBox = await shootBtn.boundingBox();
     const controlsBox = await mobileControls.boundingBox();
 
-    // In portrait mode, buttons should be below the canvas
+    // In portrait mode, button should be below the canvas
     expect(controlsBox.y).toBeGreaterThan(canvasBox.y + canvasBox.height);
 
-    // Buttons should be horizontally separated
-    expect(shootBox.x).toBeGreaterThan(jumpBox.x + jumpBox.width);
-
-    // Both buttons should be visible
+    // Jump button should be visible
     await expect(jumpBtn).toBeVisible();
-    await expect(shootBtn).toBeVisible();
   });
 
-  test('mobile buttons positioning - landscape mode', async ({ page }) => {
-    // Test landscape mode - buttons should overlay canvas
+  test('mobile button positioning - landscape mode', async ({ page }) => {
+    // Test landscape mode - button should be visible
     await page.setViewportSize({ width: 667, height: 375 });
     await page.goto('/public/index.html');
 
     const jumpBtn = page.locator('#jumpBtn');
-    const shootBtn = page.locator('#shootBtn');
 
-    // Buttons should be visible in landscape
+    // Jump button should be visible in landscape
     await expect(jumpBtn).toBeVisible();
-    await expect(shootBtn).toBeVisible();
 
-    const jumpBox = await jumpBtn.boundingBox();
-    const shootBox = await shootBtn.boundingBox();
-
-    // In landscape mode with touch devices, buttons overlay the game
-    // Jump button should be on left
-    expect(jumpBox.x).toBeLessThan(shootBox.x);
-
-    // Shoot button should be on right  
-    expect(shootBox.x).toBeGreaterThan(jumpBox.x + jumpBox.width);
-
-    // Both buttons should be visible and clickable
+    // Button should be visible and clickable
     await expect(jumpBtn).toBeEnabled();
-    await expect(shootBtn).toBeEnabled();
   });
 });

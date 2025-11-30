@@ -10,11 +10,30 @@ const canvas = document.getElementById('gameCanvas');
 // Base aspect ratio (4:1 for runner game)
 const ASPECT_RATIO = 4;
 
+// Debounce helper
+let resizeTimeout;
+function debounce(func, wait) {
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(resizeTimeout);
+      func(...args);
+    };
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(later, wait);
+  };
+}
+
 // Handle responsive canvas sizing
 function resizeCanvas() {
-  const container = canvas.parentElement;
-  const maxWidth = window.innerWidth - 40; // Account for padding
-  const maxHeight = window.innerHeight - 300; // Account for UI elements
+  const isMobile = window.innerWidth < 768;
+  const isSmallMobile = window.innerWidth < 400;
+
+  // Account for padding and UI elements
+  const horizontalPadding = isMobile ? 20 : 40;
+  const verticalSpace = isMobile ? 250 : 300;
+
+  const maxWidth = window.innerWidth - horizontalPadding;
+  const maxHeight = window.innerHeight - verticalSpace;
 
   // Calculate optimal dimensions based on viewport
   let canvasWidth = Math.min(maxWidth, 1400); // Max width 1400px
@@ -26,8 +45,17 @@ function resizeCanvas() {
     canvasWidth = canvasHeight * ASPECT_RATIO;
   }
 
-  // Minimum dimensions
-  canvasWidth = Math.max(canvasWidth, 600);
+  // Responsive minimum dimensions
+  let minWidth;
+  if (isSmallMobile) {
+    minWidth = 280; // Very small phones (320px screens)
+  } else if (isMobile) {
+    minWidth = 350; // Standard mobile
+  } else {
+    minWidth = 600; // Desktop
+  }
+
+  canvasWidth = Math.max(canvasWidth, minWidth);
   canvasHeight = canvasWidth / ASPECT_RATIO;
 
   // Set internal canvas dimensions (for rendering)
@@ -38,7 +66,7 @@ function resizeCanvas() {
   canvas.style.width = canvasWidth + 'px';
   canvas.style.height = canvasHeight + 'px';
 
-  console.log('Canvas resized - Width:', canvasWidth, 'Height:', canvasHeight);
+  console.log('Canvas resized - Width:', canvasWidth, 'Height:', canvasHeight, 'Mobile:', isMobile);
 }
 
 // Wait for DOM to be ready before initial resize
@@ -51,8 +79,8 @@ if (document.readyState === 'loading') {
 // Also resize after a short delay to ensure layout is complete
 setTimeout(resizeCanvas, 100);
 
-// Resize on window resize
-window.addEventListener('resize', resizeCanvas);
+// Resize on window resize (debounced for performance)
+window.addEventListener('resize', debounce(resizeCanvas, 150));
 
 // Determine base path for assets
 const basePath = window.ENV_CONFIG ? window.ENV_CONFIG.getBasePath() : '';

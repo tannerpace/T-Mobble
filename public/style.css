@@ -2,6 +2,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -13,6 +14,10 @@ body {
     background: #f7f7f7;
     padding: 10px;
     position: relative;
+    overflow-x: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: pan-y;
 }
 
 @media (min-width: 880px) {
@@ -46,6 +51,18 @@ body {
     font-size: 24px;
     display: flex;
     gap: 5px;
+}
+
+@media (max-width: 480px) {
+    .health-container {
+        top: 55px;
+        right: 10px;
+    }
+    
+    .health-hearts {
+        font-size: 20px;
+        gap: 3px;
+    }
 }
 
 /* Weapon Display */
@@ -88,6 +105,26 @@ body {
     max-width: 400px;
 }
 
+@media (max-width: 768px) {
+    .xp-container {
+        top: 15px;
+        left: 10px;
+        right: 90px;
+        max-width: 350px;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .xp-container {
+        top: 15px;
+        left: 8px;
+        right: 80px;
+        max-width: 280px;
+        gap: 6px;
+    }
+}
+
 .level-badge {
     background: linear-gradient(135deg, #4CAF50, #45a049);
     color: white;
@@ -103,9 +140,23 @@ body {
     border: 2px solid #2d7a2d;
 }
 
+@media (max-width: 480px) {
+    .level-badge {
+        padding: 6px 10px;
+        font-size: 12px;
+        min-width: 50px;
+    }
+}
+
 #levelDisplay {
     font-size: 20px;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+@media (max-width: 480px) {
+    #levelDisplay {
+        font-size: 18px;
+    }
 }
 
 .xp-bar-container {
@@ -152,6 +203,13 @@ body {
         -1px 1px 0 rgba(255,255,255,0.9);
     z-index: 2;
     letter-spacing: 0.5px;
+}
+
+@media (max-width: 480px) {
+    .xp-text {
+        font-size: 11px;
+        letter-spacing: 0.3px;
+    }
 }
 
 /* XP Bar Pulse Animation */
@@ -236,6 +294,10 @@ body {
     cursor: pointer;
     max-width: 100%;
     height: auto;
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 /* JavaScript handles canvas sizing dynamically */
@@ -257,6 +319,27 @@ body {
     border-radius: 3px;
 }
 
+@media (max-width: 768px) {
+    .instructions {
+        font-size: 12px;
+        margin-top: 10px;
+    }
+    
+    .instructions p {
+        margin: 3px 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .instructions {
+        font-size: 11px;
+    }
+    
+    .instructions p:first-child {
+        display: none; /* Hide desktop controls on small mobile */
+    }
+}
+
 /* Canvas wrapper */
 .canvas-wrapper {
     position: relative;
@@ -266,38 +349,58 @@ body {
 /* Mobile controls container */
 .mobile-controls {
     display: none;
-    justify-content: space-between;
-    gap: 20px;
+    justify-content: center;
     margin-top: 15px;
     padding: 0 10px;
+    max-width: 100%;
 }
 
 /* Mobile control buttons */
 .mobile-btn {
-    width: 60px;
-    height: 60px;
+    width: 70px;
+    height: 70px;
     border: 3px solid #535353;
     border-radius: 50%;
     background: white;
     color: #535353;
-    font-size: 24px;
+    font-size: 28px;
     font-weight: bold;
     cursor: pointer;
     touch-action: manipulation;
     user-select: none;
     -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     transition: all 0.1s ease;
+    position: relative;
+    min-width: 70px;
+    min-height: 70px;
+}
+
+.mobile-btn::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    border-radius: 50%;
 }
 
 .mobile-btn:active {
     background: #535353;
     color: white;
-    transform: scale(0.95);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    transform: scale(0.92);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.jump-btn {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    border-color: #2d7a2d;
 }
 
 /* Show mobile controls on touch devices */
@@ -307,40 +410,43 @@ body {
     }
 }
 
-/* Portrait mode: buttons below canvas */
+/* Portrait mode: button below canvas */
 @media (hover: none) and (pointer: coarse) and (orientation: portrait) {
     .mobile-controls {
         max-width: 400px;
         margin-left: auto;
         margin-right: auto;
     }
-    
-    .mobile-btn {
-        flex: 1;
-        max-width: 80px;
-    }
 }
 
-/* Landscape mode: buttons below canvas (same as portrait) */
+/* Landscape mode: button below canvas */
 @media (hover: none) and (pointer: coarse) and (orientation: landscape) {
     .mobile-controls {
         max-width: 100%;
         margin-left: auto;
         margin-right: auto;
     }
-    
+}
+
+/* Smaller button for very small screens */
+@media (hover: none) and (pointer: coarse) and (max-width: 400px) {
     .mobile-btn {
-        flex: 1;
-        max-width: 100px;
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+        min-width: 60px;
+        min-height: 60px;
     }
 }
 
-/* Smaller buttons for very small screens */
-@media (hover: none) and (pointer: coarse) and (max-width: 400px) {
+/* Extra small screens */
+@media (hover: none) and (pointer: coarse) and (max-width: 360px) {
     .mobile-btn {
-        width: 50px;
-        height: 50px;
-        font-size: 20px;
+        width: 55px;
+        height: 55px;
+        font-size: 22px;
+        min-width: 55px;
+        min-height: 55px;
     }
 }
 
