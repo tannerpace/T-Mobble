@@ -4,21 +4,41 @@
 import { BaseWeapon } from './BaseWeapon.js';
 
 export class LaserWeapon extends BaseWeapon {
-  constructor() {
+  constructor(assets) {
     super('Laser Beam', 'Continuous beam that damages all enemies in path', '⚡');
     this.fireRateBase = 5; // Always firing
     this.beamActive = false;
-    this.beamWidth = 8;
-    this.beamLength = 300;
+    this.beamWidth = 10;
+    this.beamLength = 350;
+    this.level = 1;
+    this.damageCounter = 0;
+    this.damageInterval = 15; // Damage every 15 frames (slower than blaster)
+    this.assets = assets;
+    this.soundPlaying = false;
   }
 
-  update(dino, projectiles, effects) {
+  setLevel(level) {
+    this.level = level;
+    // Increase width and length with level
+    this.beamWidth = 10 + (level - 1) * 3;
+    this.beamLength = 350 + (level - 1) * 30;
+    // Faster damage at higher levels
+    this.damageInterval = Math.max(8, 15 - level);
+  }
+
+  update(dino, projectiles, effects = {}) {
     // Laser is always active
     this.beamActive = true;
     this.beamX = dino.x + dino.width;
     this.beamY = dino.y + dino.height / 2;
-    this.beamLength = 300 * (effects.bulletSpeedMod || 1);
-    this.beamWidth = 8 + (effects.bulletCount || 1) * 2;
+    this.damageCounter++;
+
+    // Play laser buzz sound (loop it)
+    if (this.assets && this.assets.laserbuzSound && !this.soundPlaying) {
+      this.assets.laserbuzSound.loop = true;
+      this.assets.laserbuzSound.play().catch(() => { });
+      this.soundPlaying = true;
+    }
   }
 
   /**
@@ -79,6 +99,11 @@ export class LaserWeapon extends BaseWeapon {
   checkCollisions(enemies, onHit) {
     if (!this.beamActive) return;
 
+    // Only deal damage at intervals
+    if (this.damageCounter < this.damageInterval) return;
+
+    this.damageCounter = 0;
+
     enemies.forEach(enemy => {
       // Check if enemy is in beam path
       if (enemy.x < this.beamX + this.beamLength &&
@@ -93,5 +118,12 @@ export class LaserWeapon extends BaseWeapon {
   reset() {
     super.reset();
     this.beamActive = false;
+
+    // Stop laser sound
+    if (this.assets && this.assets.laserbuzSound) {
+      this.assets.laserbuzSound.pause();
+      this.assets.laserbuzSound.currentTime = 0;
+      this.soundPlaying = false;
+    }
   }
 }

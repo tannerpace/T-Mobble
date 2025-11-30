@@ -2,14 +2,12 @@
  * Input handler - manages keyboard and touch controls
  */
 export class InputHandler {
-  constructor(canvas, jumpBtn, shootBtn) {
+  constructor(canvas, jumpBtn) {
     this.canvas = canvas;
     this.jumpBtn = jumpBtn;
-    this.shootBtn = shootBtn;
 
     this.onJump = null;
     this.onJumpRelease = null;
-    this.onShoot = null;
     this.onStartGame = null;
     this.onRestartGame = null;
 
@@ -31,11 +29,6 @@ export class InputHandler {
           this.jumpKeyPressed = true;
           if (this.onJump) this.onJump();
         }
-      }
-
-      if (e.code === 'KeyZ') {
-        e.preventDefault();
-        if (this.onShoot) this.onShoot();
       }
     });
 
@@ -71,17 +64,9 @@ export class InputHandler {
       if (this.onJumpRelease) this.onJumpRelease();
     };
 
-    const handleShoot = (e) => {
-      e.preventDefault();
-      if (this.onShoot) this.onShoot();
-    };
-
     this.jumpBtn.addEventListener('touchstart', handleJump);
     this.jumpBtn.addEventListener('mousedown', handleJump);
     this.jumpBtn.addEventListener('touchend', handleJumpRelease);
     this.jumpBtn.addEventListener('mouseup', handleJumpRelease);
-
-    this.shootBtn.addEventListener('touchstart', handleShoot);
-    this.shootBtn.addEventListener('click', handleShoot);
   }
 }

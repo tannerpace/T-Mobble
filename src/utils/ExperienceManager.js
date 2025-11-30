@@ -5,13 +5,34 @@ export class ExperienceManager {
   constructor() {
     this.xp = 0;
     this.level = 1;
-    this.xpToNextLevel = 500; // Much higher starting requirement
-    this.xpGrowthRate = 1.5; // Each level requires 50% more XP (steeper curve)
+    this.xpToNextLevel = 100; // Easy first level
+    this.baseXP = 100; // Starting requirement
     this.pendingLevelUps = 0;
     this.listeners = {
       onLevelUp: null,
       onXPGain: null
     };
+  }
+
+  /**
+   * Calculate XP required for a specific level using exponential curve
+   * Formula creates fast early progression, then exponentially harder
+   * @param {number} level - Target level
+   * @returns {number} XP required
+   */
+  calculateXPForLevel(level) {
+    // Early game (levels 1-5): Linear growth for quick satisfaction
+    if (level <= 5) {
+      return Math.floor(this.baseXP * level);
+    }
+    // Mid game (levels 6-12): Moderate exponential curve
+    else if (level <= 12) {
+      return Math.floor(this.baseXP * Math.pow(level, 1.5));
+    }
+    // Late game (13+): Strong exponential curve for long-term engagement
+    else {
+      return Math.floor(this.baseXP * Math.pow(level, 1.8));
+    }
   }
 
   /**
@@ -38,7 +59,9 @@ export class ExperienceManager {
     this.xp -= this.xpToNextLevel;
     this.level++;
     this.pendingLevelUps++;
-    this.xpToNextLevel = Math.floor(this.xpToNextLevel * this.xpGrowthRate);
+
+    // Calculate next level requirement using exponential formula
+    this.xpToNextLevel = this.calculateXPForLevel(this.level);
 
     if (this.listeners.onLevelUp) {
       this.listeners.onLevelUp(this.level, this.pendingLevelUps);
@@ -69,7 +92,7 @@ export class ExperienceManager {
   reset() {
     this.xp = 0;
     this.level = 1;
-    this.xpToNextLevel = 500;
+    this.xpToNextLevel = 100;
     this.pendingLevelUps = 0;
   }
 
@@ -84,5 +107,32 @@ export class ExperienceManager {
       progress: this.getXPProgress(),
       pendingLevelUps: this.pendingLevelUps
     };
+  }
+
+  /**
+   * Debug: Get XP requirements for multiple levels
+   * Useful for balancing and testing
+   */
+  getProgressionCurve(maxLevel = 20) {
+    const curve = [];
+    for (let i = 1; i <= maxLevel; i++) {
+      curve.push({
+        level: i,
+        xpRequired: this.calculateXPForLevel(i),
+        totalXP: this.getTotalXPForLevel(i)
+      });
+    }
+    return curve;
+  }
+
+  /**
+   * Calculate total XP needed to reach a specific level
+   */
+  getTotalXPForLevel(targetLevel) {
+    let total = 0;
+    for (let i = 1; i < targetLevel; i++) {
+      total += this.calculateXPForLevel(i);
+    }
+    return total;
   }
 }

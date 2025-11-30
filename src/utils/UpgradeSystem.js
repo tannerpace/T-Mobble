@@ -35,62 +35,6 @@ export class UpgradeSystem {
         icon: '⚡',
         weaponType: 'laser',
         maxLevel: 5
-      },
-      {
-        id: 'cannon',
-        name: 'Cannon',
-        description: 'Powerful explosive shots',
-        icon: '💣',
-        weaponType: 'cannon',
-        maxLevel: 5
-      },
-      {
-        id: 'boomerang',
-        name: 'Boomerang',
-        description: 'Returns after hitting enemies',
-        icon: '🪃',
-        weaponType: 'boomerang',
-        maxLevel: 5
-      },
-      {
-        id: 'lightning',
-        name: 'Lightning',
-        description: 'Chain lightning between enemies',
-        icon: '⚡',
-        weaponType: 'lightning',
-        maxLevel: 5
-      },
-      {
-        id: 'missiles',
-        name: 'Homing Missiles',
-        description: 'Tracks nearest enemies',
-        icon: '🚀',
-        weaponType: 'missiles',
-        maxLevel: 5
-      },
-      {
-        id: 'flamethrower',
-        name: 'Flamethrower',
-        description: 'Continuous cone of fire',
-        icon: '🔥',
-        weaponType: 'flamethrower',
-        maxLevel: 5
-      },
-      {
-        id: 'sword',
-        name: 'Spinning Sword',
-        description: 'Orbits around you',
-        icon: '⚔️',
-        weaponType: 'sword',
-        maxLevel: 5
-      },
-      {
-        id: 'freeze_ray',
-        name: 'Freeze Ray',
-        description: 'Slows and damages enemies',
-        icon: '❄️',
-        weaponType: 'freeze',
-        maxLevel: 5
       }
     ];
   }

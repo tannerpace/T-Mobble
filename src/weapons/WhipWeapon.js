@@ -4,16 +4,26 @@
 import { BaseWeapon } from './BaseWeapon.js';
 
 export class WhipWeapon extends BaseWeapon {
-  constructor() {
+  constructor(assets) {
     super('Whip', 'Close-range arc attack, hits multiple enemies', '🪢');
-    this.fireRateBase = 25; // Faster than bullets
+    this.fireRateBase = 40; // Slower than bullets for balance
     this.whipAnimations = [];
+    this.level = 1;
+    this.radius = 70;
+    this.assets = assets;
   }
 
-  update(dino, projectiles, effects) {
+  setLevel(level) {
+    this.level = level;
+    // Increase radius and speed with level
+    this.radius = 70 + (level - 1) * 10;
+    this.fireRateBase = Math.max(20, 40 - (level - 1) * 3);
+  }
+
+  update(dino, projectiles, effects = {}) {
     this.fireRateCounter++;
 
-    const fireRate = Math.max(5, this.fireRateBase / effects.fireRateMod);
+    const fireRate = Math.max(15, this.fireRateBase / (effects.fireRateMod || 1));
 
     if (this.fireRateCounter >= fireRate) {
       this.fire(dino, projectiles, effects);
@@ -30,17 +40,23 @@ export class WhipWeapon extends BaseWeapon {
     }
   }
 
-  fire(dino, projectiles, effects) {
+  fire(dino, projectiles, effects = {}) {
+    // Play whip sound
+    if (this.assets && this.assets.whipSound) {
+      this.assets.whipSound.currentTime = 0;
+      this.assets.whipSound.play().catch(() => { });
+    }
+
     // Create whip arc animation
     const whipArc = {
       x: dino.x + dino.width,
       y: dino.y + dino.height / 2,
-      radius: 60 * (effects.bulletSpeedMod || 1),
-      width: 15,
+      radius: this.radius,
+      width: 12,
       damage: 1,
-      pierce: effects.pierceCount || 99, // Whip hits all in range
+      pierce: 99, // Whip hits all in range
       frame: 0,
-      duration: 10,
+      duration: 12,
       hitEnemies: new Set() // Track which enemies were hit
     };
     this.whipAnimations.push(whipArc);

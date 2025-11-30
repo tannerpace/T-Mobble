@@ -1,4 +1,5 @@
-const CACHE_NAME = 'dino-game-v61';
+const CACHE_NAME = 'dino-game-v85';
+
 
 // Get base path dynamically
 const getBasePath = () => {
@@ -40,6 +41,10 @@ const urlsToCache = [
   `${BASE_PATH}/assets/images/palm.png`,
   `${BASE_PATH}/assets/audio/pop.m4a`,
   `${BASE_PATH}/assets/audio/yumyum.m4a`,
+  `${BASE_PATH}/assets/audio/yeehaw.m4a`,
+  `${BASE_PATH}/assets/audio/pew.m4a`,
+  `${BASE_PATH}/assets/audio/laserbuz.m4a`,
+  `${BASE_PATH}/assets/audio/whip.m4a`,
   `${BASE_PATH}/assets/icons/icon-192.png`,
   `${BASE_PATH}/assets/icons/icon-512.png`,
   `${BASE_PATH}/config.js`
