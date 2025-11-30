@@ -1052,6 +1052,9 @@ export class Game {
    * Main game loop
    */
   gameLoop() {
+    // Poll gamepad input each frame
+    this.inputHandler.pollGamepad();
+
     this.update();
     this.render();
     this.animationId = requestAnimationFrame(() => this.gameLoop());
