@@ -3,7 +3,9 @@
  */
 import { Bullet } from '../entities/Bullet.js';
 import { Cloud } from '../entities/Cloud.js';
+import { Coin } from '../entities/Coin.js';
 import { Dino } from '../entities/Dino.js';
+import { EliteEnemy } from '../entities/EliteEnemy.js';
 import { FlyingEnemy } from '../entities/FlyingEnemy.js';
 import { HealthPickup } from '../entities/HealthPickup.js';
 import { Obstacle } from '../entities/Obstacle.js';
@@ -52,8 +54,9 @@ export class Game {
     // Entities
     this.dino = new Dino(canvas, this.gravity, assets);
     this.obstacles = [];
-    this.enemies = []; // Flying and tank enemies
+    this.enemies = []; // Flying, tank, and elite enemies
     this.xpGems = [];
+    this.coins = []; // Coins dropped by enemies
     this.healthPickups = []; // Health restoration items
     this.clouds = [new Cloud(canvas), new Cloud(canvas), new Cloud(canvas)];
     this.powerUps = [];
@@ -396,6 +399,7 @@ export class Game {
     this.obstacles = [];
     this.enemies = [];
     this.xpGems = [];
+    this.coins = [];
     this.healthPickups = [];
     this.powerUps = [];
     this.bullets = [];
@@ -438,16 +442,19 @@ export class Game {
   }
 
   /**
-   * Spawn an enemy (flying or tank)
+   * Spawn an enemy (flying, tank, or elite)
    */
   spawnEnemy() {
     const rand = Math.random();
-    if (rand < 0.7) {
-      // 70% chance for flying enemy
+    if (rand < 0.6) {
+      // 60% chance for flying enemy
       this.enemies.push(new FlyingEnemy(this.canvas, this.gameSpeed));
-    } else {
-      // 30% chance for tank enemy
+    } else if (rand < 0.85) {
+      // 25% chance for tank enemy
       this.enemies.push(new TankEnemy(this.canvas, this.gameSpeed));
+    } else {
+      // 15% chance for elite enemy (drops 2x coins!)
+      this.enemies.push(new EliteEnemy(this.canvas, this.gameSpeed));
     }
   }
 
@@ -475,6 +482,13 @@ export class Game {
    */
   spawnXPGem(x, y, value) {
     this.xpGems.push(new XPGem(x, y, value));
+  }
+
+  /**
+   * Spawn coin at position
+   */
+  spawnCoin(x, y, value = 1) {
+    this.coins.push(new Coin(x, y, value));
   }
 
   /**
@@ -567,6 +581,7 @@ export class Game {
     this.updateObstacles();
     this.updateEnemies();
     this.updateXPGems(effects);
+    this.updateCoins(effects);
 
     // Update particle system
     this.particleSystem.update();
@@ -714,6 +729,61 @@ export class Game {
   }
 
   /**
+   * Update coins
+   */
+  updateCoins(effects) {
+    const magnetRange = effects.magnetRange || 0;
+
+    for (let i = this.coins.length - 1; i >= 0; i--) {
+      const coin = this.coins[i];
+      coin.update(this.dino, magnetRange);
+
+      // Check collision with dino
+      if (coin.checkCollision(this.dino)) {
+        const coinValue = coin.collect();
+        this.powerUpCount += coinValue;
+        console.log(`Coin collected! Value: ${coinValue}x, Total: ${this.powerUpCount}`);
+
+        // Gold coin particles (extra sparkly for 2x coins)
+        this.particleSystem.spawnParticles(
+          coin.x,
+          coin.y,
+          ParticleSystem.COLORS.COIN_COLLECT,
+          coinValue >= 2 ? 15 : 10
+        );
+
+        // Play bling sound for coins
+        this.assets.blingSound.currentTime = 0;
+        this.assets.blingSound.play().catch(e => console.log('Audio play failed:', e));
+
+        // Check if player has enough for an upgrade
+        if (this.powerUpCount >= this.powerUpUpgradeThreshold) {
+          this.powerUpCount -= this.powerUpUpgradeThreshold;
+          this.coinUpgrades++;
+
+          // Double the threshold for next upgrade (power of 2: 1, 2, 4, 8, 16, 32...)
+          this.powerUpUpgradeThreshold = Math.pow(2, this.coinUpgrades);
+
+          console.log(`Upgrade #${this.coinUpgrades} available! Next upgrade at ${this.powerUpUpgradeThreshold} coins. Remaining: ${this.powerUpCount}`);
+
+          if (this.gameRunning && !this.gameOver) {
+            this.pauseGame();
+            setTimeout(() => this.showUpgradeSelection(), 100);
+          }
+        }
+
+        this.coins.splice(i, 1);
+        continue;
+      }
+
+      // Remove if off-screen
+      if (coin.isOffScreen()) {
+        this.coins.splice(i, 1);
+      }
+    }
+  }
+
+  /**
    * Update bullets
    */
   updateBullets() {
@@ -745,6 +815,12 @@ export class Game {
               15 // More particles for death
             );
             this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
+
+            // Spawn coin for elite enemies
+            if (enemy.type === 'elite' && enemy.getCoinDrop) {
+              this.spawnCoin(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.getCoinDrop());
+            }
+
             this.enemies.splice(j, 1);
             this.screenShake.shake(8, 150); // Bigger shake on kill
           } else {
@@ -951,6 +1027,7 @@ export class Game {
     this.obstacles.forEach(obstacle => obstacle.draw(this.ctx));
     this.enemies.forEach(enemy => enemy.draw(this.ctx));
     this.xpGems.forEach(gem => gem.draw(this.ctx));
+    this.coins.forEach(coin => coin.draw(this.ctx));
     this.healthPickups.forEach(pickup => pickup.draw(this.ctx, this.frameCount));
     this.powerUps.forEach(powerUp => powerUp.draw(this.ctx, this.frameCount));
     this.bullets.forEach(bullet => bullet.draw(this.ctx));
