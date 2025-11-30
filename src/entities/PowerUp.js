@@ -11,15 +11,14 @@ export class PowerUp {
     this.speed = gameSpeed * 0.8;
     this.collected = false;
 
-    // Random food emoji
-    const foodEmojis = ['🍕', '🍔', '🍟', '🌭', '🍗', '🥓', '🌮', '🌯', '🍖', '🍜'];
-    this.emoji = foodEmojis[Math.floor(Math.random() * foodEmojis.length)];
+    // Gold coin emoji
+    this.emoji = '🪙';
   }
 
   draw(ctx, frameCount) {
     if (this.collected) return;
 
-    // Draw food emoji
+    // Draw gold coin emoji
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';

@@ -4,9 +4,15 @@
 import { Bullet } from '../entities/Bullet.js';
 import { Cloud } from '../entities/Cloud.js';
 import { Dino } from '../entities/Dino.js';
+import { FlyingEnemy } from '../entities/FlyingEnemy.js';
 import { Obstacle } from '../entities/Obstacle.js';
 import { PowerUp } from '../entities/PowerUp.js';
+import { TankEnemy } from '../entities/TankEnemy.js';
+import { XPGem } from '../entities/XPGem.js';
+import { ExperienceManager } from '../utils/ExperienceManager.js';
 import { ScoreManager } from '../utils/ScoreManager.js';
+import { UpgradeSystem } from '../utils/UpgradeSystem.js';
+import { WeaponSystem } from '../utils/WeaponSystem.js';
 import { checkCollision } from '../utils/collision.js';
 import { InputHandler } from './InputHandler.js';
 import { Renderer } from './Renderer.js';
@@ -25,15 +31,23 @@ export class Game {
     this.frameCount = 0;
     this.animationId = null;
     this.powerUpCount = 0;
+    this.powerUpUpgradeThreshold = 10; // Coins needed for an upgrade
     this.isSubmitting = false;
+    this.isPaused = false;
+    this.regenerationCounter = 0;
 
     // Game systems
     this.renderer = new Renderer(canvas, this.ctx);
     this.scoreManager = new ScoreManager();
+    this.xpManager = new ExperienceManager();
+    this.upgradeSystem = new UpgradeSystem();
+    this.weaponSystem = new WeaponSystem();
 
     // Entities
     this.dino = new Dino(canvas, this.gravity, assets);
     this.obstacles = [];
+    this.enemies = []; // Flying and tank enemies
+    this.xpGems = [];
     this.clouds = [new Cloud(canvas), new Cloud(canvas), new Cloud(canvas)];
     this.powerUps = [];
     this.bullets = [];
@@ -47,8 +61,222 @@ export class Game {
     // Leaderboard UI
     this.setupLeaderboardUI();
 
+    // Setup XP and upgrade systems
+    this.setupXPSystem();
+    this.setupUpgradeUI();
+
+    // Set default starting weapon (Blaster)
+    this.weaponSystem.selectWeapon(0);
+    const weaponIcon = document.getElementById('weaponIcon');
+    const weaponName = document.getElementById('weaponName');
+    if (weaponIcon) weaponIcon.textContent = '🔫';
+    if (weaponName) weaponName.textContent = 'Blaster';
+
     // Update UI
     this.updateScoreDisplay();
+    this.updateHealthDisplay();
+    this.updateXPDisplay();
+  }
+
+  /**
+   * Setup XP system listeners
+   */
+  setupXPSystem() {
+    this.xpManager.listeners.onLevelUp = (level, pending) => {
+      console.log(`Level up! Now level ${level}`);
+
+      // Show level up notification
+      this.showLevelUpNotification(level);
+
+      if (this.gameRunning && !this.gameOver) {
+        this.pauseGame();
+        // Delay upgrade modal slightly to show level up animation
+        setTimeout(() => this.showUpgradeSelection(), 600);
+      }
+    };
+
+    this.xpManager.listeners.onXPGain = (amount, current, max) => {
+      this.updateXPDisplay();
+    };
+  }
+
+  /**
+   * Show level up notification
+   */
+  showLevelUpNotification(level) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = 'level-up-notification';
+    notification.innerHTML = `🎉 LEVEL ${level}! 🎉`;
+    document.body.appendChild(notification);
+
+    // Remove after animation
+    setTimeout(() => {
+      notification.remove();
+    }, 1000);
+  }
+
+  /**
+   * Setup upgrade UI handlers
+   */
+  setupUpgradeUI() {
+    // Will be set up when modal is shown
+  }
+
+  /**
+   * Pause the game
+   */
+  pauseGame() {
+    this.isPaused = true;
+  }
+
+  /**
+   * Unpause the game
+   */
+  unpauseGame() {
+    this.isPaused = false;
+  }
+
+  /**
+   * Show upgrade selection modal
+   */
+  showUpgradeSelection() {
+    const modal = document.getElementById('upgradeModal');
+    const choicesContainer = document.getElementById('upgradeChoices');
+
+    if (!modal || !choicesContainer) return;
+
+    const choices = this.upgradeSystem.getUpgradeChoices(3);
+    choicesContainer.innerHTML = '';
+
+    // Update modal title
+    const modalContent = modal.querySelector('.upgrade-content h2');
+    if (modalContent) {
+      modalContent.textContent = '⬆️ Level Up! Choose an Upgrade';
+    }
+
+    choices.forEach(weapon => {
+      const card = document.createElement('div');
+      card.className = 'upgrade-card';
+
+      let levelInfo = '';
+      if (weapon.isNewWeapon) {
+        levelInfo = '<div class="upgrade-level">NEW!</div>';
+      } else {
+        levelInfo = `<div class="upgrade-level">Level ${weapon.currentLevel} → ${weapon.nextLevel}</div>`;
+      }
+
+      card.innerHTML = `
+        <div class="upgrade-icon">${weapon.icon}</div>
+        <div class="upgrade-name">${weapon.name}</div>
+        ${levelInfo}
+        <div class="upgrade-description">${weapon.description}</div>
+      `;
+
+      card.addEventListener('click', () => {
+        this.selectUpgrade(weapon.id);
+      });
+
+      choicesContainer.appendChild(card);
+    });
+
+    modal.style.display = 'flex';
+  }
+
+  /**
+   * Select an upgrade (add or level up weapon)
+   */
+  selectUpgrade(weaponId) {
+    const wasUnlocked = this.upgradeSystem.isWeaponUnlocked(weaponId);
+
+    this.upgradeSystem.applyUpgrade(weaponId);
+
+    // Add new weapon or update existing weapon level
+    if (!wasUnlocked) {
+      this.weaponSystem.addWeapon(weaponId);
+    } else {
+      this.weaponSystem.levelUpWeapon(weaponId, this.upgradeSystem.getWeaponLevel(weaponId));
+    }
+
+    this.xpManager.consumeLevelUp();
+
+    // Play sound
+    this.assets.beepSound.currentTime = 0;
+    this.assets.beepSound.play().catch(e => console.log('Audio play failed:', e));
+
+    // Close modal
+    const modal = document.getElementById('upgradeModal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+
+    // Check if more level ups pending
+    if (this.xpManager.pendingLevelUps > 0) {
+      setTimeout(() => this.showUpgradeSelection(), 300);
+    } else {
+      this.unpauseGame();
+    }
+  }
+
+  /**
+   * Update health display
+   */
+  updateHealthDisplay() {
+    const healthDisplay = document.getElementById('healthDisplay');
+    if (!healthDisplay) return;
+
+    const hearts = [];
+    for (let i = 0; i < this.dino.maxHealth; i++) {
+      if (i < this.dino.health) {
+        hearts.push('❤️');
+      } else {
+        hearts.push('🖤');
+      }
+    }
+    healthDisplay.innerHTML = hearts.join(' ');
+  }
+
+  /**
+   * Update XP display
+   */
+  updateXPDisplay() {
+    const levelDisplay = document.getElementById('levelDisplay');
+    const xpBar = document.getElementById('xpBar');
+    const xpText = document.getElementById('xpText');
+    const xpBarContainer = document.querySelector('.xp-bar-container');
+
+    const state = this.xpManager.getState();
+
+    if (levelDisplay) {
+      levelDisplay.textContent = state.level;
+    }
+    if (xpBar) {
+      xpBar.style.width = `${state.progress}%`;
+
+      // Add visual feedback when close to leveling up
+      if (state.progress >= 80) {
+        xpBar.style.background = 'linear-gradient(90deg, #FFD700, #FFA500, #FF8C00)';
+        xpBar.style.animation = 'pulse 0.8s infinite';
+      } else if (state.progress >= 60) {
+        xpBar.style.background = 'linear-gradient(90deg, #66BB6A, #81C784, #A5D6A7)';
+        xpBar.style.animation = 'none';
+      } else {
+        xpBar.style.background = 'linear-gradient(90deg, #4CAF50, #66BB6A, #81C784)';
+        xpBar.style.animation = 'none';
+      }
+    }
+    if (xpText) {
+      xpText.textContent = `${state.xp} / ${state.xpToNextLevel} (${Math.floor(state.progress)}%)`;
+    }
+
+    // Add glow to container when close to level up
+    if (xpBarContainer) {
+      if (state.progress >= 80) {
+        xpBarContainer.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.2), 0 0 15px rgba(255,215,0,0.6)';
+      } else {
+        xpBarContainer.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.2)';
+      }
+    }
   }
 
   /**
@@ -113,41 +341,57 @@ export class Game {
    */
   resetGame() {
     this.obstacles = [];
+    this.enemies = [];
+    this.xpGems = [];
     this.powerUps = [];
     this.bullets = [];
     this.scoreManager.reset();
+    this.xpManager.reset();
+    this.upgradeSystem.reset();
+    this.weaponSystem.reset();
     this.gameSpeed = 2;
     this.frameCount = 0;
     this.powerUpCount = 0;
     this.gameOver = false;
+    this.isPaused = false;
+    this.regenerationCounter = 0;
     this.dino.reset();
     this.updateScoreDisplay();
+    this.updateHealthDisplay();
+    this.updateXPDisplay();
   }
 
   /**
-   * Shoot a bullet
+   * Shoot a bullet (unlimited)
    */
   shootBullet() {
-    if (this.powerUpCount > 0) {
-      const bulletY = this.dino.y + this.dino.height / 2;
-      this.bullets.push(new Bullet(this.dino.x + this.dino.width, bulletY));
-      this.powerUpCount--;
-      console.log('Bullet fired! Remaining power-ups:', this.powerUpCount);
-    } else {
-      console.log('No power-ups! Collect power-ups to shoot.');
-    }
+    const bulletY = this.dino.y + this.dino.height / 2;
+    this.bullets.push(new Bullet(this.dino.x + this.dino.width, bulletY));
   }
 
   /**
    * Spawn an obstacle
    */
   spawnObstacle() {
-    const minDistance = 250; // Increased from 200 for more spacing
-    const maxDistance = 400; // Add variety
+    const minDistance = 250;
     const lastObstacle = this.obstacles[this.obstacles.length - 1];
 
     if (!lastObstacle || this.canvas.width - lastObstacle.x > minDistance) {
       this.obstacles.push(new Obstacle(this.canvas, this.gameSpeed, this.assets.palmImg));
+    }
+  }
+
+  /**
+   * Spawn an enemy (flying or tank)
+   */
+  spawnEnemy() {
+    const rand = Math.random();
+    if (rand < 0.7) {
+      // 70% chance for flying enemy
+      this.enemies.push(new FlyingEnemy(this.canvas, this.gameSpeed));
+    } else {
+      // 30% chance for tank enemy
+      this.enemies.push(new TankEnemy(this.canvas, this.gameSpeed));
     }
   }
 
@@ -158,6 +402,13 @@ export class Game {
     if (Math.random() < 0.3) {
       this.powerUps.push(new PowerUp(this.canvas, this.gameSpeed));
     }
+  }
+
+  /**
+   * Spawn XP gem at position
+   */
+  spawnXPGem(x, y, value) {
+    this.xpGems.push(new XPGem(x, y, value));
   }
 
   /**
@@ -179,48 +430,87 @@ export class Game {
    * Update game state
    */
   update() {
-    if (!this.gameRunning || this.gameOver) return;
+    if (!this.gameRunning || this.gameOver || this.isPaused) return;
 
     this.frameCount++;
+    const effects = this.upgradeSystem.calculateEffects();
 
     // Update dino
     this.dino.update();
 
-    // Spawn obstacles with randomized timing
-    // Random interval between 80-140 frames (was fixed at 100)
-    const spawnInterval = 80 + Math.floor(Math.random() * 60);
+    // Auto-fire weapon system
+    this.weaponSystem.update(this.dino, this.bullets, effects);
+
+    // Spawn obstacles (trees to jump over) - less frequent, player must jump
+    const spawnInterval = 120 + Math.floor(Math.random() * 80); // Slower: 120-200 frames
     if (this.frameCount % spawnInterval === 0) {
       this.spawnObstacle();
     }
 
-    // Spawn power-ups
-    if (this.frameCount % 250 === 0) {
+    // Spawn enemies (flying and tanks) - progressively more as player levels up
+    const playerLevel = this.xpManager.level;
+    let enemySpawnChance = 0;
+    let enemySpawnInterval = 200;
+
+    // Progressive difficulty based on level
+    if (playerLevel === 1) {
+      enemySpawnChance = 0.3; // 30% chance, very few enemies
+      enemySpawnInterval = 200; // Every 200 frames
+    } else if (playerLevel === 2) {
+      enemySpawnChance = 0.5; // 50% chance
+      enemySpawnInterval = 150;
+    } else if (playerLevel >= 3 && playerLevel <= 5) {
+      enemySpawnChance = 0.7; // 70% chance
+      enemySpawnInterval = 120;
+    } else if (playerLevel >= 6 && playerLevel <= 8) {
+      enemySpawnChance = 0.85; // 85% chance
+      enemySpawnInterval = 100;
+    } else {
+      enemySpawnChance = 1.0; // 100% chance, maximum difficulty
+      enemySpawnInterval = 80;
+    }
+
+    if (this.frameCount % enemySpawnInterval === 0 && Math.random() < enemySpawnChance) {
+      this.spawnEnemy();
+    }
+
+    // Spawn power-ups (coins for weapon upgrades)
+    if (this.frameCount % 250 === 0 && Math.random() < 0.6) {
       this.spawnPowerUp();
     }
 
-    // Update and manage power-ups
-    this.updatePowerUps();
+    // Regeneration
+    if (effects.regeneration) {
+      this.regenerationCounter++;
+      if (this.regenerationCounter >= 600) { // Every 10 seconds
+        this.dino.heal(1);
+        this.updateHealthDisplay();
+        this.regenerationCounter = 0;
+      }
+    }
 
-    // Update and manage bullets
+    // Update all entities
+    this.updatePowerUps(effects);
     this.updateBullets();
-
-    // Update and manage obstacles
     this.updateObstacles();
+    this.updateEnemies();
+    this.updateXPGems(effects);
 
-    // Update score
+    // Update score with speed modifier
+    const speedModifier = effects.speedMod || 1;
     this.scoreManager.increment();
     this.updateScoreDisplay();
 
-    // Increase difficulty
+    // Increase difficulty (slower with speed boost upgrade)
     if (this.scoreManager.score % 200 === 0) {
-      this.gameSpeed += 0.5;
+      this.gameSpeed += (0.5 * speedModifier);
     }
   }
 
   /**
    * Update power-ups
    */
-  updatePowerUps() {
+  updatePowerUps(effects) {
     for (let i = this.powerUps.length - 1; i >= 0; i--) {
       const powerUp = this.powerUps[i];
       powerUp.update();
@@ -228,12 +518,23 @@ export class Game {
       // Check collision with dino
       if (powerUp.checkCollision(this.dino)) {
         powerUp.collected = true;
-        this.powerUpCount += 3;
-        console.log('Power-up collected! Total:', this.powerUpCount);
+        this.powerUpCount += 1;
+        console.log('Coin collected! Total:', this.powerUpCount);
 
-        // Play sound
-        this.assets.powerUpSound.currentTime = 0;
-        this.assets.powerUpSound.play().catch(e => console.log('Audio play failed:', e));
+        // Play bling sound for coins
+        this.assets.blingSound.currentTime = 0;
+        this.assets.blingSound.play().catch(e => console.log('Audio play failed:', e));
+
+        // Check if player has enough for an upgrade
+        if (this.powerUpCount >= this.powerUpUpgradeThreshold) {
+          this.powerUpCount -= this.powerUpUpgradeThreshold;
+          console.log('Upgrade available! Remaining coins:', this.powerUpCount);
+
+          if (this.gameRunning && !this.gameOver) {
+            this.pauseGame();
+            setTimeout(() => this.showUpgradeSelection(), 100);
+          }
+        }
       }
 
       // Remove if off-screen or collected
@@ -244,32 +545,122 @@ export class Game {
   }
 
   /**
+   * Update XP gems
+   */
+  updateXPGems(effects) {
+    const magnetRange = effects.magnetRange || 0;
+
+    for (let i = this.xpGems.length - 1; i >= 0; i--) {
+      const gem = this.xpGems[i];
+      gem.update(this.dino, magnetRange);
+
+      // Check collision with dino
+      if (gem.checkCollision(this.dino)) {
+        const xpValue = gem.collect();
+        const xpMultiplier = effects.xpMultiplier || 1;
+        this.xpManager.addXP(Math.floor(xpValue * xpMultiplier));
+        this.xpGems.splice(i, 1);
+        continue;
+      }
+
+      // Remove if off-screen
+      if (gem.isOffScreen()) {
+        this.xpGems.splice(i, 1);
+      }
+    }
+  }
+
+  /**
    * Update bullets
    */
   updateBullets() {
+    const effects = this.upgradeSystem.calculateEffects();
+
     for (let i = this.bullets.length - 1; i >= 0; i--) {
       const bullet = this.bullets[i];
-      bullet.update();
+      if (!bullet.active) {
+        this.bullets.splice(i, 1);
+        continue;
+      }
 
-      // Check collision with obstacles
-      for (let j = this.obstacles.length - 1; j >= 0; j--) {
-        const obstacle = this.obstacles[j];
-        if (bullet.checkCollision(obstacle)) {
-          bullet.active = false;
-          this.obstacles.splice(j, 1);
-          this.bullets.splice(i, 1);
-          console.log('Hit! Obstacle destroyed.');
+      bullet.update();
+      let bulletRemoved = false;
+
+      // Bullets ONLY hit enemies, NOT obstacles (trees are obstacles to jump over)
+      // Check collision with enemies only
+      for (let j = this.enemies.length - 1; j >= 0; j--) {
+        const enemy = this.enemies[j];
+        if (bullet.checkCollision(enemy)) {
+          const enemyDied = enemy.takeDamage(1);
+
+          if (enemyDied) {
+            this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
+            this.enemies.splice(j, 1);
+            this.renderer.screenShake(3, 5); // Small shake on kill
+          }
 
           // Play hit sound
           this.assets.hitSound.currentTime = 0;
           this.assets.hitSound.play().catch(e => console.log('Audio play failed:', e));
-          break;
+
+          if (!bullet.active) {
+            this.bullets.splice(i, 1);
+            bulletRemoved = true;
+            break;
+          }
         }
       }
 
       // Remove if off-screen
-      if (bullet.isOffScreen(this.canvas.width)) {
+      if (!bulletRemoved && bullet.isOffScreen(this.canvas.width)) {
         this.bullets.splice(i, 1);
+      }
+    }
+  }  /**
+   * Update enemies
+   */
+  updateEnemies() {
+    // Check weapon collisions with enemies (for whip/laser melee weapons)
+    this.weaponSystem.checkCollisions(this.enemies, (enemy) => {
+      const enemyDied = enemy.takeDamage(1);
+
+      if (enemyDied) {
+        this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
+        this.renderer.screenShake(3, 5); // Small shake on kill
+      }
+
+      // Play hit sound
+      this.assets.hitSound.currentTime = 0;
+      this.assets.hitSound.play().catch(e => console.log('Audio play failed:', e));
+
+      return enemyDied;
+    });
+
+    for (let i = this.enemies.length - 1; i >= 0; i--) {
+      const enemy = this.enemies[i];
+      enemy.update();
+
+      // Check collision with dino
+      if (checkCollision(this.dino, enemy)) {
+        const damageTaken = this.dino.takeDamage();
+        if (damageTaken) {
+          this.updateHealthDisplay();
+          this.renderer.screenShake(8, 15); // Shake on damage
+
+          // Check if dino died
+          if (this.dino.isDead()) {
+            this.handleGameOver();
+          }
+        }
+
+        // Remove enemy after hit
+        this.enemies.splice(i, 1);
+        continue;
+      }
+
+      // Remove if off-screen
+      if (enemy.isOffScreen()) {
+        this.enemies.splice(i, 1);
       }
     }
   }
@@ -284,28 +675,46 @@ export class Game {
 
       // Check collision with dino
       if (checkCollision(this.dino, obstacle)) {
-        this.gameOver = true;
-        this.gameRunning = false;
+        const damageTaken = this.dino.takeDamage();
+        if (damageTaken) {
+          this.updateHealthDisplay();
+          this.renderer.screenShake(8, 15); // Shake on damage
 
-        // Play end sound
-        this.assets.endSound.currentTime = 0;
-        this.assets.endSound.play().catch(e => console.log('Audio play failed:', e));
-
-        // Update high score (for local display)
-        this.scoreManager.updateHighScore();
-        this.updateScoreDisplay();
-
-        // Check if score qualifies for global leaderboard before prompting
-        const currentScore = this.scoreManager.getCurrentScore();
-        if (currentScore > 0) {
-          setTimeout(() => this.checkAndPromptLeaderboard(), 500);
-        }
+          // Check if dino died
+          if (this.dino.isDead()) {
+            this.handleGameOver();
+          }
+        }        // Remove obstacle after hit
+        this.obstacles.splice(i, 1);
+        continue;
       }
 
       // Remove if off-screen
       if (obstacle.isOffScreen()) {
         this.obstacles.splice(i, 1);
       }
+    }
+  }
+
+  /**
+   * Handle game over
+   */
+  handleGameOver() {
+    this.gameOver = true;
+    this.gameRunning = false;
+
+    // Play end sound
+    this.assets.endSound.currentTime = 0;
+    this.assets.endSound.play().catch(e => console.log('Audio play failed:', e));
+
+    // Update high score (for local display)
+    this.scoreManager.updateHighScore();
+    this.updateScoreDisplay();
+
+    // Check if score qualifies for global leaderboard before prompting
+    const currentScore = this.scoreManager.getCurrentScore();
+    if (currentScore > 0) {
+      setTimeout(() => this.checkAndPromptLeaderboard(), 500);
     }
   }
 
@@ -341,11 +750,19 @@ export class Game {
     // Draw game entities
     this.dino.draw(this.ctx);
     this.obstacles.forEach(obstacle => obstacle.draw(this.ctx));
+    this.enemies.forEach(enemy => enemy.draw(this.ctx));
+    this.xpGems.forEach(gem => gem.draw(this.ctx));
     this.powerUps.forEach(powerUp => powerUp.draw(this.ctx, this.frameCount));
     this.bullets.forEach(bullet => bullet.draw(this.ctx));
 
-    // Draw UI
-    this.renderer.drawPowerUpCounter(this.powerUpCount);
+    // Draw weapon effects (whip arc, laser beam, etc.)
+    this.weaponSystem.draw(this.ctx, this.frameCount);
+
+    // Draw coin counter
+    this.ctx.fillStyle = '#FFD700';
+    this.ctx.font = 'bold 16px Courier New';
+    this.ctx.textAlign = 'left';
+    this.ctx.fillText('🪙 ' + this.powerUpCount + '/' + this.powerUpUpgradeThreshold, 20, 30);
   }
 
   /**
