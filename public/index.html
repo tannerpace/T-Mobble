@@ -25,6 +25,29 @@
 
 <body>
   <div class="game-container">
+    <!-- Health Display -->
+    <div class="health-container">
+      <div id="healthDisplay" class="health-hearts"></div>
+    </div>
+
+    <!-- Weapon Display -->
+    <div class="weapon-display">
+      <span id="weaponIcon" class="weapon-icon-display">🔫</span>
+      <span id="weaponName" class="weapon-name-display">Blaster</span>
+    </div>
+
+    <!-- XP and Level Display -->
+    <div class="xp-container">
+      <div class="level-badge">
+        <span>LVL</span>
+        <span id="levelDisplay">1</span>
+      </div>
+      <div class="xp-bar-container">
+        <div id="xpBar" class="xp-bar" style="width: 0%"></div>
+        <span id="xpText" class="xp-text">0 / 100</span>
+      </div>
+    </div>
+
     <div class="score-container">
       <span class="score">HI <span id="highScore">00000</span></span>
       <span class="score"><span id="currentScore">00000</span></span>
@@ -37,8 +60,8 @@
       <button id="shootBtn" class="mobile-btn shoot-btn" aria-label="Shoot">⚡</button>
     </div>
     <div class="instructions">
-      <p>Press <strong>SPACE</strong> or <strong>↑</strong> to jump | <strong>Z</strong> to shoot</p>
-      <p>Press <strong>SPACE</strong> to restart | Mobile: Tap <strong>↑</strong> / <strong>⚡</strong></p>
+      <p>Press <strong>SPACE</strong> or <strong>↑</strong> to jump | Auto-fire weapon enabled</p>
+      <p>Press <strong>SPACE</strong> to restart | Mobile: Tap <strong>↑</strong> to jump</p>
     </div>
 
     <!-- Global Leaderboard -->
@@ -69,6 +92,24 @@
       <p id="submitResult" class="submit-result"></p>
     </div>
   </div>
+
+  <!-- Upgrade Selection Modal -->
+  <div id="upgradeModal" class="modal upgrade-modal" style="display: none;">
+    <div class="modal-content upgrade-content">
+      <h2>⬆️ LEVEL UP! Choose an Upgrade</h2>
+      <div id="upgradeChoices" class="upgrade-choices"></div>
+    </div>
+  </div>
+
+  <!-- Weapon Selection Modal -->
+  <div id="weaponModal" class="modal weapon-modal" style="display: none;">
+    <div class="modal-content weapon-content">
+      <h2>🎮 Choose Your Starting Weapon</h2>
+      <p class="weapon-subtitle">Different weapons, different playstyles!</p>
+      <div id="weaponChoices" class="weapon-choices"></div>
+    </div>
+  </div>
+
   <script type="module" src="../src/main.js"></script>
   <script>
     // Update manifest path dynamically based on environment

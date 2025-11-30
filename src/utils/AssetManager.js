@@ -55,6 +55,8 @@ export class AssetManager {
     this.loadSound('powerup', 'assets/audio/yumyum.m4a', 0.5);
     this.loadSound('end', 'assets/audio/end.m4a', 0.5);
     this.loadSound('hit', 'assets/audio/hit.m4a', 0.5);
+    this.loadSound('beep', 'assets/audio/beep.m4a', 0.5);
+    this.loadSound('bling', 'assets/audio/bling.m4a', 0.5);
 
     return {
       trexImg: this.getImage('trex'),
@@ -62,7 +64,9 @@ export class AssetManager {
       jumpSound: this.getSound('jump'),
       powerUpSound: this.getSound('powerup'),
       endSound: this.getSound('end'),
-      hitSound: this.getSound('hit')
+      hitSound: this.getSound('hit'),
+      beepSound: this.getSound('beep'),
+      blingSound: this.getSound('bling')
     };
   }
 }

@@ -5,13 +5,43 @@ export class Renderer {
   constructor(canvas, ctx) {
     this.canvas = canvas;
     this.ctx = ctx;
+    this.shakeIntensity = 0;
+    this.shakeDuration = 0;
+  }
+
+  /**
+   * Apply screen shake effect
+   * @param {number} intensity - Shake intensity in pixels
+   * @param {number} duration - Duration in frames
+   */
+  screenShake(intensity = 5, duration = 10) {
+    this.shakeIntensity = intensity;
+    this.shakeDuration = duration;
   }
 
   /**
    * Clear the entire canvas
    */
   clear() {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    // Apply shake offset
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (this.shakeDuration > 0) {
+      offsetX = (Math.random() - 0.5) * this.shakeIntensity * 2;
+      offsetY = (Math.random() - 0.5) * this.shakeIntensity * 2;
+      this.shakeDuration--;
+
+      // Reduce intensity over time
+      if (this.shakeDuration % 2 === 0 && this.shakeIntensity > 0) {
+        this.shakeIntensity *= 0.8;
+      }
+    }
+
+    this.ctx.save();
+    this.ctx.translate(offsetX, offsetY);
+    this.ctx.clearRect(-offsetX, -offsetY, this.canvas.width, this.canvas.height);
+    this.ctx.restore();
   }
 
   /**

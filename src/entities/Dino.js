@@ -23,6 +23,17 @@ export class Dino {
     this.maxJumpHoldTime = 15; // frames
     this.isHoldingJump = false;
 
+    // Health system
+    this.maxHealth = 3;
+    this.health = this.maxHealth;
+    this.invulnerable = false;
+    this.invulnerabilityTime = 120; // 2 seconds at 60fps
+    this.invulnerabilityCounter = 0;
+
+    // Double jump system
+    this.hasDoubleJump = false;
+    this.doubleJumpAvailable = false;
+
     // Animation
     this.animationFrame = 0;
     this.animationSpeed = 5; // Change animation every 5 frames
@@ -40,7 +51,13 @@ export class Dino {
         yOffset = this.animationFrame === 0 ? 0 : -1;
       }
 
+      // Flicker effect when invulnerable
+      if (this.invulnerable && Math.floor(this.invulnerabilityCounter / 5) % 2 === 0) {
+        ctx.globalAlpha = 0.5;
+      }
+
       ctx.drawImage(this.trexImg, this.x, this.y + yOffset, this.width, this.height);
+      ctx.globalAlpha = 1.0;
     } else {
       // Fallback while image loads
       ctx.fillStyle = '#535353';
@@ -66,6 +83,7 @@ export class Dino {
       this.grounded = true;
       this.jumping = false;
       this.jumpHoldTime = 0;
+      this.doubleJumpAvailable = this.hasDoubleJump; // Reset double jump on landing
       if (this.dy > 0) {
         this.dy = 0;
       }
@@ -81,16 +99,36 @@ export class Dino {
         this.frameCount = 0;
       }
     }
+
+    // Update invulnerability
+    if (this.invulnerable) {
+      this.invulnerabilityCounter--;
+      if (this.invulnerabilityCounter <= 0) {
+        this.invulnerable = false;
+      }
+    }
   }
 
   jump() {
-    console.log('Jump called! grounded:', this.grounded, 'jumping:', this.jumping);
+    console.log('Jump called! grounded:', this.grounded, 'jumping:', this.jumping, 'doubleJump:', this.doubleJumpAvailable);
+
+    // Regular jump
     if (this.grounded && !this.jumping) {
       this.dy = this.jumpPower;
       this.jumping = true;
       this.isHoldingJump = true;
       this.jumpHoldTime = 0;
       console.log('JUMP! dy set to:', this.dy);
+
+      // Play jump sound
+      this.jumpSound.currentTime = 0;
+      this.jumpSound.play().catch(e => console.log('Audio play failed:', e));
+    }
+    // Double jump
+    else if (!this.grounded && this.doubleJumpAvailable) {
+      this.dy = this.jumpPower * 0.9; // Slightly weaker double jump
+      this.doubleJumpAvailable = false;
+      console.log('DOUBLE JUMP! dy set to:', this.dy);
 
       // Play jump sound
       this.jumpSound.currentTime = 0;
@@ -107,6 +145,48 @@ export class Dino {
     this.isHoldingJump = false;
   }
 
+  /**
+   * Take damage
+   * @returns {boolean} True if damage was taken, false if invulnerable or dead
+   */
+  takeDamage() {
+    if (this.invulnerable || this.health <= 0) {
+      return false;
+    }
+
+    this.health--;
+    if (this.health > 0) {
+      this.invulnerable = true;
+      this.invulnerabilityCounter = this.invulnerabilityTime;
+    }
+    return true;
+  }
+
+  /**
+   * Heal the player
+   * @param {number} amount - Amount to heal
+   */
+  heal(amount = 1) {
+    this.health = Math.min(this.health + amount, this.maxHealth);
+  }
+
+  /**
+   * Check if player is dead
+   */
+  isDead() {
+    return this.health <= 0;
+  }
+
+  /**
+   * Apply upgrade effects to dino
+   */
+  applyUpgradeEffects(effects) {
+    this.maxHealth = 3 + effects.maxHealthBonus;
+    this.health = Math.min(this.health, this.maxHealth);
+    this.jumpPower = -12 * effects.jumpPowerMod;
+    this.hasDoubleJump = effects.doubleJump;
+  }
+
   reset() {
     this.y = 150;
     this.dy = 0;
@@ -116,5 +196,9 @@ export class Dino {
     this.isHoldingJump = false;
     this.animationFrame = 0;
     this.frameCount = 0;
+    this.health = this.maxHealth;
+    this.invulnerable = false;
+    this.invulnerabilityCounter = 0;
+    this.doubleJumpAvailable = false;
   }
 }
