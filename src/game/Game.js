@@ -290,11 +290,14 @@ export class Game {
         this.assets.endSound.currentTime = 0;
         this.assets.endSound.play().catch(e => console.log('Audio play failed:', e));
 
-        // Update high score and prompt for leaderboard submission
-        if (this.scoreManager.updateHighScore()) {
-          this.updateScoreDisplay();
-          // Prompt user to submit score to global leaderboard
-          setTimeout(() => this.promptScoreSubmission(), 500);
+        // Update high score (for local display)
+        this.scoreManager.updateHighScore();
+        this.updateScoreDisplay();
+
+        // Check if score qualifies for global leaderboard before prompting
+        const currentScore = this.scoreManager.getCurrentScore();
+        if (currentScore > 0) {
+          setTimeout(() => this.checkAndPromptLeaderboard(), 500);
         }
       }
 
@@ -423,8 +426,9 @@ export class Game {
 
   /**
    * Show leaderboard and fetch scores
+   * @param {boolean} forceRefresh - Force refresh from API instead of using cache
    */
-  async showLeaderboard() {
+  async showLeaderboard(forceRefresh = false) {
     const container = document.getElementById('leaderboardContainer');
     const content = document.getElementById('leaderboardContent');
 
@@ -432,7 +436,7 @@ export class Game {
     content.innerHTML = '<p class="loading">Loading...</p>';
 
     try {
-      const data = await this.scoreManager.fetchLeaderboard();
+      const data = await this.scoreManager.fetchLeaderboard(forceRefresh);
 
       if (data.success && data.scores && data.scores.length > 0) {
         const top50 = data.scores.slice(0, 50);
@@ -460,6 +464,34 @@ export class Game {
     } catch (error) {
       console.error('Error loading leaderboard:', error);
       content.innerHTML = '<p class="error">Failed to load leaderboard</p>';
+    }
+  }
+
+  /**
+   * Check if score qualifies for leaderboard and prompt if it does
+   */
+  async checkAndPromptLeaderboard() {
+    const currentScore = this.scoreManager.getCurrentScore();
+
+    try {
+      const data = await this.scoreManager.fetchLeaderboard();
+
+      // Check if score qualifies (top 100 or empty leaderboard)
+      if (data.success && data.scores) {
+        const leaderboard = data.scores;
+        const qualifies = leaderboard.length < 100 || currentScore > leaderboard[leaderboard.length - 1].score;
+
+        if (qualifies) {
+          this.promptScoreSubmission();
+        }
+      } else {
+        // If can't fetch leaderboard, prompt anyway (benefit of the doubt)
+        this.promptScoreSubmission();
+      }
+    } catch (error) {
+      console.error('Error checking leaderboard eligibility:', error);
+      // On error, prompt anyway (benefit of the doubt)
+      this.promptScoreSubmission();
     }
   }
 
@@ -501,8 +533,8 @@ export class Game {
         // Close modal after 2 seconds
         setTimeout(() => {
           modal.style.display = 'none';
-          // Automatically show leaderboard
-          this.showLeaderboard();
+          // Automatically show leaderboard with fresh data
+          this.showLeaderboard(true);
         }, 2000);
       } else {
         result.textContent = 'Failed to submit: ' + (response.error || 'Unknown error');
