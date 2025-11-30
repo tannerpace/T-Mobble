@@ -6,14 +6,15 @@ import { LaserWeapon } from '../weapons/LaserWeapon.js';
 import { WhipWeapon } from '../weapons/WhipWeapon.js';
 
 export class WeaponSystem {
-  constructor() {
+  constructor(assets) {
     this.enabled = true;
+    this.assets = assets;
 
     // All weapon types (for selection)
     this.allWeaponTypes = [
-      new BulletWeapon(),
-      new WhipWeapon(),
-      new LaserWeapon()
+      new BulletWeapon(assets),
+      new WhipWeapon(assets),
+      new LaserWeapon(assets)
     ];
 
     // Active weapons (starts with blaster)
@@ -53,9 +54,9 @@ export class WeaponSystem {
   addWeapon(weaponId) {
     // Map weapon IDs to weapon instances
     const weaponMap = {
-      'blaster': new BulletWeapon(),
-      'whip': new WhipWeapon(),
-      'laser': new LaserWeapon()
+      'blaster': new BulletWeapon(this.assets),
+      'whip': new WhipWeapon(this.assets),
+      'laser': new LaserWeapon(this.assets)
       // More weapons can be added here as they're implemented
     };
 
