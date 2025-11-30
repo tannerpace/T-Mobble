@@ -5,11 +5,12 @@ import { Bullet } from '../entities/Bullet.js';
 import { BaseWeapon } from './BaseWeapon.js';
 
 export class BulletWeapon extends BaseWeapon {
-  constructor() {
+  constructor(assets) {
     super('Blaster', 'Fires bullets that pierce enemies', '🔫');
     this.fireRateBase = 30;
     this.level = 1;
     this.maxRange = 300; // Base range
+    this.assets = assets;
   }
 
   setLevel(level) {
@@ -18,7 +19,7 @@ export class BulletWeapon extends BaseWeapon {
     this.maxRange = 300 + (Math.min(level - 1, 3) * 60);
   }
 
-  update(dino, projectiles, effects) {
+  update(dino, projectiles, effects = {}) {
     this.fireRateCounter++;
 
     const fireRate = Math.max(5, this.fireRateBase / (effects.fireRateMod || 1));
@@ -29,7 +30,7 @@ export class BulletWeapon extends BaseWeapon {
     }
   }
 
-  fire(dino, projectiles, effects) {
+  fire(dino, projectiles, effects = {}) {
     const bulletY = dino.y + dino.height / 2;
     const bulletX = dino.x + dino.width;
     const count = effects.bulletCount || 1;
@@ -37,6 +38,12 @@ export class BulletWeapon extends BaseWeapon {
     const speed = 8 * (effects.bulletSpeedMod || 1);
     // Add pierce at level 5+
     const pierce = this.level >= 5 ? (this.level - 4) : (effects.pierceCount || 0);
+
+    // Play pew sound
+    if (this.assets && this.assets.pewSound) {
+      this.assets.pewSound.currentTime = 0;
+      this.assets.pewSound.play().catch(() => { });
+    }
 
     if (count === 1) {
       const bullet = new Bullet(bulletX, bulletY, 0, speed, pierce);

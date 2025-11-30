@@ -102,6 +102,15 @@ export class ParticleSystem {
       [0, 255, 255],   // cyan
       [100, 200, 255], // light blue
       [50, 150, 255]   // blue
+    ],
+    // Level up - rainbow/gold celebration
+    LEVEL_UP: [
+      [255, 215, 0],   // gold
+      [255, 105, 180], // hot pink
+      [147, 112, 219], // purple
+      [100, 255, 218], // turquoise
+      [255, 255, 100], // yellow
+      [255, 140, 0]    // orange
     ]
   };
 }

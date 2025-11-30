@@ -22,9 +22,9 @@ export class XPGem {
     if (value >= 50) {
       this.color = '💎'; // Diamond for high value
     } else if (value >= 20) {
-      this.color = '💠'; // Blue gem for medium
+      this.color = '🔷'; // Blue diamond for medium
     } else {
-      this.color = '💚'; // Green gem for low
+      this.color = '💠'; // Blue gem for low
     }
   }
 

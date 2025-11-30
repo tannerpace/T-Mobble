@@ -5,6 +5,7 @@ import { Bullet } from '../entities/Bullet.js';
 import { Cloud } from '../entities/Cloud.js';
 import { Dino } from '../entities/Dino.js';
 import { FlyingEnemy } from '../entities/FlyingEnemy.js';
+import { HealthPickup } from '../entities/HealthPickup.js';
 import { Obstacle } from '../entities/Obstacle.js';
 import { PowerUp } from '../entities/PowerUp.js';
 import { TankEnemy } from '../entities/TankEnemy.js';
@@ -28,11 +29,13 @@ export class Game {
     this.gameRunning = false;
     this.gameOver = false;
     this.gameSpeed = 2;
+    this.maxGameSpeed = 8; // Cap maximum speed for playability
     this.gravity = 0.5;
     this.frameCount = 0;
     this.animationId = null;
     this.powerUpCount = 0;
-    this.powerUpUpgradeThreshold = 10; // Coins needed for an upgrade
+    this.coinUpgrades = 0; // Track number of coin upgrades purchased
+    this.powerUpUpgradeThreshold = 1; // Start at 1 coin (will double each time)
     this.isSubmitting = false;
     this.isPaused = false;
     this.regenerationCounter = 0;
@@ -42,7 +45,7 @@ export class Game {
     this.scoreManager = new ScoreManager();
     this.xpManager = new ExperienceManager();
     this.upgradeSystem = new UpgradeSystem();
-    this.weaponSystem = new WeaponSystem();
+    this.weaponSystem = new WeaponSystem(assets);
     this.particleSystem = new ParticleSystem();
     this.screenShake = new ScreenShake();
 
@@ -51,14 +54,14 @@ export class Game {
     this.obstacles = [];
     this.enemies = []; // Flying and tank enemies
     this.xpGems = [];
+    this.healthPickups = []; // Health restoration items
     this.clouds = [new Cloud(canvas), new Cloud(canvas), new Cloud(canvas)];
     this.powerUps = [];
     this.bullets = [];
 
     // Input handling
     const jumpBtn = document.getElementById('jumpBtn');
-    const shootBtn = document.getElementById('shootBtn');
-    this.inputHandler = new InputHandler(canvas, jumpBtn, shootBtn);
+    this.inputHandler = new InputHandler(canvas, jumpBtn);
     this.setupInputCallbacks();
 
     // Leaderboard UI
@@ -107,16 +110,64 @@ export class Game {
    * Show level up notification
    */
   showLevelUpNotification(level) {
+    // Determine if this is a milestone level
+    const isMilestone = level % 5 === 0;
+    const isMajorMilestone = level % 10 === 0;
+
+    // Create spectacular particle burst for level up
+    const particleCount = isMajorMilestone ? 30 : isMilestone ? 20 : 15;
+    const centerX = this.canvas.width / 2;
+    const centerY = this.canvas.height / 3;
+
+    // Spawn celebration particles
+    this.particleSystem.spawnParticles(
+      centerX,
+      centerY,
+      ParticleSystem.COLORS.LEVEL_UP,
+      particleCount
+    );
+
+    // Add screen shake for major milestones
+    if (isMajorMilestone) {
+      this.screenShake.shake(8, 300);
+    } else if (isMilestone) {
+      this.screenShake.shake(5, 200);
+    }
+
     // Create notification element
     const notification = document.createElement('div');
     notification.className = 'level-up-notification';
-    notification.innerHTML = `🎉 LEVEL ${level}! 🎉`;
+
+    // Special messages for milestone levels
+    let message = `🎉 LEVEL ${level}! 🎉`;
+    if (isMajorMilestone) {
+      message = `✨ LEVEL ${level}! ✨<br><span style="font-size: 0.6em;">MAJOR MILESTONE!</span>`;
+      notification.style.fontSize = '2.5em';
+      notification.style.textShadow = '0 0 20px gold, 0 0 40px orange';
+    } else if (isMilestone) {
+      message = `🌟 LEVEL ${level}! 🌟<br><span style="font-size: 0.7em;">Milestone Reached!</span>`;
+      notification.style.fontSize = '2em';
+    }
+
+    notification.innerHTML = message;
     document.body.appendChild(notification);
+
+    // Play yeehaw celebration sound for level up!
+    try {
+      const yeehawSound = this.assets.yeehawSound;
+      if (yeehawSound) {
+        yeehawSound.currentTime = 0;
+        yeehawSound.volume = isMajorMilestone ? 0.7 : 0.6;
+        yeehawSound.play().catch(() => { });
+      }
+    } catch (e) {
+      // Sound failed, continue without it
+    }
 
     // Remove after animation
     setTimeout(() => {
       notification.remove();
-    }, 1000);
+    }, isMajorMilestone ? 1500 : 1000);
   }
 
   /**
@@ -251,7 +302,16 @@ export class Game {
     const state = this.xpManager.getState();
 
     if (levelDisplay) {
-      levelDisplay.textContent = state.level;
+      // Add phase indicator emoji based on level
+      let phaseEmoji = '';
+      if (state.level <= 5) {
+        phaseEmoji = '⚡'; // Fast progression
+      } else if (state.level <= 12) {
+        phaseEmoji = '📈'; // Medium progression
+      } else {
+        phaseEmoji = '🚀'; // Hard progression
+      }
+      levelDisplay.textContent = `${phaseEmoji} ${state.level}`;
     }
     if (xpBar) {
       xpBar.style.width = `${state.progress}%`;
@@ -288,7 +348,6 @@ export class Game {
   setupInputCallbacks() {
     this.inputHandler.onJump = () => this.handleJumpAction();
     this.inputHandler.onJumpRelease = () => this.handleJumpRelease();
-    this.inputHandler.onShoot = () => this.handleShootAction();
   }
 
   /**
@@ -310,15 +369,6 @@ export class Game {
   handleJumpRelease() {
     if (this.gameRunning && !this.gameOver) {
       this.dino.releaseJump();
-    }
-  }
-
-  /**
-   * Handle shoot action
-   */
-  handleShootAction() {
-    if (this.gameRunning && !this.gameOver) {
-      this.shootBullet();
     }
   }
 
@@ -346,6 +396,7 @@ export class Game {
     this.obstacles = [];
     this.enemies = [];
     this.xpGems = [];
+    this.healthPickups = [];
     this.powerUps = [];
     this.bullets = [];
     this.scoreManager.reset();
@@ -355,6 +406,8 @@ export class Game {
     this.gameSpeed = 2;
     this.frameCount = 0;
     this.powerUpCount = 0;
+    this.coinUpgrades = 0;
+    this.powerUpUpgradeThreshold = 1;
     this.gameOver = false;
     this.isPaused = false;
     this.regenerationCounter = 0;
@@ -404,6 +457,16 @@ export class Game {
   spawnPowerUp() {
     if (Math.random() < 0.3) {
       this.powerUps.push(new PowerUp(this.canvas, this.gameSpeed));
+    }
+  }
+
+  /**
+   * Spawn a health pickup (rare, only when player is damaged)
+   */
+  spawnHealthPickup() {
+    // Only spawn if player is damaged and random chance
+    if (this.dino.health < this.dino.maxHealth && Math.random() < 0.15) {
+      this.healthPickups.push(new HealthPickup(this.canvas, this.gameSpeed));
     }
   }
 
@@ -482,6 +545,11 @@ export class Game {
       this.spawnPowerUp();
     }
 
+    // Spawn health pickups (rare, only when damaged)
+    if (this.frameCount % 400 === 0) {
+      this.spawnHealthPickup();
+    }
+
     // Regeneration
     if (effects.regeneration) {
       this.regenerationCounter++;
@@ -494,6 +562,7 @@ export class Game {
 
     // Update all entities
     this.updatePowerUps(effects);
+    this.updateHealthPickups(effects);
     this.updateBullets();
     this.updateObstacles();
     this.updateEnemies();
@@ -508,9 +577,12 @@ export class Game {
     this.scoreManager.increment();
     this.updateScoreDisplay();
 
-    // Increase difficulty (slower with speed boost upgrade)
-    if (this.scoreManager.score % 200 === 0) {
-      this.gameSpeed += (0.5 * speedModifier);
+    // Increase difficulty gradually with diminishing returns
+    // Slower increase at higher speeds to prevent it getting too fast
+    if (this.scoreManager.score % 300 === 0 && this.gameSpeed < this.maxGameSpeed) {
+      // Calculate increment based on current speed (smaller increments as speed increases)
+      const speedIncrement = this.gameSpeed < 4 ? 0.3 : this.gameSpeed < 6 ? 0.2 : 0.1;
+      this.gameSpeed = Math.min(this.maxGameSpeed, this.gameSpeed + (speedIncrement * speedModifier));
     }
   }
 
@@ -543,7 +615,12 @@ export class Game {
         // Check if player has enough for an upgrade
         if (this.powerUpCount >= this.powerUpUpgradeThreshold) {
           this.powerUpCount -= this.powerUpUpgradeThreshold;
-          console.log('Upgrade available! Remaining coins:', this.powerUpCount);
+          this.coinUpgrades++;
+
+          // Double the threshold for next upgrade (power of 2: 1, 2, 4, 8, 16, 32...)
+          this.powerUpUpgradeThreshold = Math.pow(2, this.coinUpgrades);
+
+          console.log(`Upgrade #${this.coinUpgrades} available! Next upgrade at ${this.powerUpUpgradeThreshold} coins. Remaining: ${this.powerUpCount}`);
 
           if (this.gameRunning && !this.gameOver) {
             this.pauseGame();
@@ -555,6 +632,48 @@ export class Game {
       // Remove if off-screen or collected
       if (powerUp.isOffScreen() || powerUp.collected) {
         this.powerUps.splice(i, 1);
+      }
+    }
+  }
+
+  /**
+   * Update health pickups
+   */
+  updateHealthPickups(effects) {
+    for (let i = this.healthPickups.length - 1; i >= 0; i--) {
+      const healthPickup = this.healthPickups[i];
+      healthPickup.update();
+
+      // Check collision with dino
+      if (healthPickup.checkCollision(this.dino)) {
+        // Only collect if not at max health
+        if (this.dino.health < this.dino.maxHealth) {
+          const healAmount = healthPickup.collect();
+          this.dino.heal(healAmount);
+          this.updateHealthDisplay();
+
+          // Pink healing particles
+          this.particleSystem.spawnParticles(
+            healthPickup.x + healthPickup.width / 2,
+            healthPickup.y + healthPickup.height / 2,
+            [[255, 182, 193], [255, 105, 180], [255, 192, 203]], // Pink colors
+            12
+          );
+
+          // Play healing sound
+          try {
+            this.assets.powerUpSound.currentTime = 0;
+            this.assets.powerUpSound.play().catch(e => console.log('Audio play failed:', e));
+          } catch (e) { }
+
+          this.healthPickups.splice(i, 1);
+          continue;
+        }
+      }
+
+      // Remove if off-screen or collected
+      if (healthPickup.isOffScreen() || healthPickup.collected) {
+        this.healthPickups.splice(i, 1);
       }
     }
   }
@@ -710,6 +829,10 @@ export class Game {
           this.updateHealthDisplay();
           this.screenShake.shake(12, 200); // Big shake on player damage
 
+          // Play hit sound
+          this.assets.endSound.currentTime = 0;
+          this.assets.endSound.play().catch(e => console.log('Audio play failed:', e));
+
           // Check if dino died
           if (this.dino.isDead()) {
             this.handleGameOver();
@@ -743,6 +866,10 @@ export class Game {
           this.updateHealthDisplay();
           this.renderer.screenShake(8, 15); // Shake on damage
 
+          // Play hit sound
+          this.assets.endSound.currentTime = 0;
+          this.assets.endSound.play().catch(e => console.log('Audio play failed:', e));
+
           // Check if dino died
           if (this.dino.isDead()) {
             this.handleGameOver();
@@ -766,9 +893,9 @@ export class Game {
     this.gameOver = true;
     this.gameRunning = false;
 
-    // Play end sound
-    this.assets.endSound.currentTime = 0;
-    this.assets.endSound.play().catch(e => console.log('Audio play failed:', e));
+    // Play death sound
+    this.assets.deadSound.currentTime = 0;
+    this.assets.deadSound.play().catch(e => console.log('Audio play failed:', e));
 
     // Update high score (for local display)
     this.scoreManager.updateHighScore();
@@ -824,6 +951,7 @@ export class Game {
     this.obstacles.forEach(obstacle => obstacle.draw(this.ctx));
     this.enemies.forEach(enemy => enemy.draw(this.ctx));
     this.xpGems.forEach(gem => gem.draw(this.ctx));
+    this.healthPickups.forEach(pickup => pickup.draw(this.ctx, this.frameCount));
     this.powerUps.forEach(powerUp => powerUp.draw(this.ctx, this.frameCount));
     this.bullets.forEach(bullet => bullet.draw(this.ctx));
 
