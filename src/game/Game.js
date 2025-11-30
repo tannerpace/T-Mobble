@@ -435,10 +435,10 @@ export class Game {
       const data = await this.scoreManager.fetchLeaderboard();
 
       if (data.success && data.scores && data.scores.length > 0) {
-        const top10 = data.scores.slice(0, 10);
+        const top50 = data.scores.slice(0, 50);
         let html = '<ul class="leaderboard-list">';
 
-        top10.forEach((entry, index) => {
+        top50.forEach((entry, index) => {
           const rank = index + 1;
           const topClass = rank <= 3 ? ' top-3' : '';
           const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
