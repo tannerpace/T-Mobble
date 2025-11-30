@@ -1,5 +1,6 @@
 const CACHE_NAME = 'dino-game-v85';
 
+
 // Get base path dynamically
 const getBasePath = () => {
   const location = self.location;
