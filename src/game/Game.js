@@ -1045,7 +1045,7 @@ export class Game {
     this.ctx.fillStyle = '#FFD700';
     this.ctx.font = 'bold 16px Courier New';
     this.ctx.textAlign = 'left';
-    this.ctx.fillText('🪙 ' + this.powerUpCount + '/' + this.powerUpUpgradeThreshold, 20, 30);
+    this.ctx.fillText('💵 ' + this.powerUpCount + '/' + this.powerUpUpgradeThreshold, 20, 30);
   }
 
   /**

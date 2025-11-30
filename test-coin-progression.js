@@ -3,7 +3,7 @@
  * Run with: node test-coin-progression.js
  */
 
-console.log('🪙 COIN UPGRADE PROGRESSION (Power of 2)\n');
+console.log('💵 COIN UPGRADE PROGRESSION (Power of 2)\n');
 console.log('Upgrade # | Coins Required | Total Coins Spent | Phase');
 console.log('----------|----------------|-------------------|------------------');
 

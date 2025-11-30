@@ -21,7 +21,7 @@ export class Coin {
       this.emoji = '💰'; // Money bag for high value (2x+)
       this.glowColor = '#FFD700'; // Gold glow
     } else {
-      this.emoji = '🪙'; // Regular coin
+      this.emoji = '💵'; // Regular coin (now money emoji)
       this.glowColor = '#FFA500'; // Orange glow
     }
   }
