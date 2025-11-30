@@ -7,25 +7,38 @@ import { AssetManager } from './utils/AssetManager.js';
 // Get canvas element
 const canvas = document.getElementById('gameCanvas');
 
-// Set internal canvas dimensions (for rendering)
-const GAME_WIDTH = 800;
-const GAME_HEIGHT = 200;
-canvas.width = GAME_WIDTH;
-canvas.height = GAME_HEIGHT;
+// Base aspect ratio (4:1 for runner game)
+const ASPECT_RATIO = 4;
 
 // Handle responsive canvas sizing
 function resizeCanvas() {
   const container = canvas.parentElement;
-  const containerWidth = container.clientWidth;
+  const maxWidth = window.innerWidth - 40; // Account for padding
+  const maxHeight = window.innerHeight - 300; // Account for UI elements
 
-  // Calculate the scale to fit within container while maintaining aspect ratio
-  const scale = Math.min(1, containerWidth / GAME_WIDTH);
+  // Calculate optimal dimensions based on viewport
+  let canvasWidth = Math.min(maxWidth, 1400); // Max width 1400px
+  let canvasHeight = canvasWidth / ASPECT_RATIO;
 
-  // Set display size (CSS pixels) while maintaining internal resolution
-  canvas.style.width = (GAME_WIDTH * scale) + 'px';
-  canvas.style.height = (GAME_HEIGHT * scale) + 'px';
+  // Ensure height doesn't exceed available space
+  if (canvasHeight > maxHeight) {
+    canvasHeight = maxHeight;
+    canvasWidth = canvasHeight * ASPECT_RATIO;
+  }
 
-  console.log('Canvas resized - Container:', containerWidth, 'Scale:', scale);
+  // Minimum dimensions
+  canvasWidth = Math.max(canvasWidth, 600);
+  canvasHeight = canvasWidth / ASPECT_RATIO;
+
+  // Set internal canvas dimensions (for rendering)
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
+
+  // Set display size
+  canvas.style.width = canvasWidth + 'px';
+  canvas.style.height = canvasHeight + 'px';
+
+  console.log('Canvas resized - Width:', canvasWidth, 'Height:', canvasHeight);
 }
 
 // Wait for DOM to be ready before initial resize

@@ -203,8 +203,14 @@ body {
 @media (min-width: 880px) {
     .game-container {
         width: auto;
-        max-width: none;
+        max-width: 95vw;
         padding: 20px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .game-container {
+        max-width: 1440px;
     }
 }
 

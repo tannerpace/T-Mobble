@@ -5,9 +5,9 @@ export class TankEnemy {
   constructor(canvas, gameSpeed) {
     this.canvas = canvas;
     this.x = canvas.width + Math.random() * 300;
-    this.y = 150; // Ground level (same as dino)
     this.width = 50;
     this.height = 60;
+    this.y = canvas.height * 0.8 - this.height; // Ground level (dynamic)
     this.speed = gameSpeed * 0.6; // Slower than normal
     this.health = 5; // Takes 5 hits
     this.maxHealth = 5;

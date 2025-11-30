@@ -5,8 +5,8 @@ export class FlyingEnemy {
   constructor(canvas, gameSpeed) {
     this.canvas = canvas;
     this.x = canvas.width + Math.random() * 200;
-    // Flying height - between 60-110 pixels from top (above ground enemies)
-    this.y = 60 + Math.random() * 50;
+    // Flying height - upper third of canvas (15-45% from top)
+    this.y = canvas.height * 0.15 + Math.random() * (canvas.height * 0.3);
     this.width = 35;
     this.height = 30;
     this.speed = gameSpeed * (0.9 + Math.random() * 0.4); // Varies speed

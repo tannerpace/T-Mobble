@@ -5,7 +5,8 @@ export class PowerUp {
   constructor(canvas, gameSpeed) {
     this.canvas = canvas;
     this.x = canvas.width + Math.random() * 400;
-    this.y = 100 + Math.random() * 40;
+    // Spawn in upper half of game area (20-40% from top)
+    this.y = canvas.height * 0.2 + Math.random() * (canvas.height * 0.2);
     this.width = 24;
     this.height = 24;
     this.speed = gameSpeed * 0.8;

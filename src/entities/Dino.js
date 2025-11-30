@@ -10,9 +10,12 @@ export class Dino {
 
     // Position and dimensions
     this.x = 50;
-    this.y = 150;
     this.width = 40;
     this.height = 44;
+
+    // Ground position (80% of canvas height minus dino height)
+    this.groundY = this.canvas.height * 0.8 - this.height;
+    this.y = this.groundY;
 
     // Physics
     this.dy = 0;
@@ -66,8 +69,11 @@ export class Dino {
   }
 
   update() {
+    // Update ground position in case canvas resized
+    this.groundY = this.canvas.height * 0.8 - this.height;
+
     // Apply gravity
-    if (this.y < 150) {
+    if (this.y < this.groundY) {
       // Variable jump: if not holding jump and moving upward, cut the jump short
       if (this.jumping && !this.isHoldingJump && this.dy < 0) {
         // Immediately reduce upward velocity when releasing jump button
@@ -79,7 +85,7 @@ export class Dino {
 
       this.grounded = false;
     } else {
-      this.y = 150;
+      this.y = this.groundY;
       this.grounded = true;
       this.jumping = false;
       this.jumpHoldTime = 0;
@@ -188,7 +194,8 @@ export class Dino {
   }
 
   reset() {
-    this.y = 150;
+    this.groundY = this.canvas.height * 0.8 - this.height;
+    this.y = this.groundY;
     this.dy = 0;
     this.jumping = false;
     this.grounded = false;

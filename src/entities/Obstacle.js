@@ -7,9 +7,9 @@ export class Obstacle {
     this.palmImg = palmImg;
 
     this.x = canvas.width;
-    this.y = 150;
     this.width = 20;
     this.height = 40 + Math.random() * 20;
+    this.y = canvas.height * 0.8 - this.height;
     this.speed = gameSpeed;
   }
 

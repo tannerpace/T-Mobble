@@ -48,19 +48,22 @@ export class Renderer {
    * Draw the ground line
    */
   drawGround(frameCount, gameSpeed) {
+    // Ground line at 80% of canvas height (dynamic)
+    const groundY = this.canvas.height * 0.8;
+
     this.ctx.strokeStyle = '#535353';
     this.ctx.lineWidth = 2;
     this.ctx.beginPath();
-    this.ctx.moveTo(0, 194);
-    this.ctx.lineTo(this.canvas.width, 194);
+    this.ctx.moveTo(0, groundY);
+    this.ctx.lineTo(this.canvas.width, groundY);
     this.ctx.stroke();
 
     // Dashed ground pattern
     this.ctx.setLineDash([10, 10]);
     const offset = (frameCount * gameSpeed) % 20;
     this.ctx.beginPath();
-    this.ctx.moveTo(-offset, 196);
-    this.ctx.lineTo(this.canvas.width, 196);
+    this.ctx.moveTo(-offset, groundY + 2);
+    this.ctx.lineTo(this.canvas.width, groundY + 2);
     this.ctx.stroke();
     this.ctx.setLineDash([]);
   }
