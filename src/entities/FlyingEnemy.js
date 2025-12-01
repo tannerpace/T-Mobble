@@ -1,68 +1,41 @@
 /**
  * FlyingEnemy - Flying obstacle at variable heights
  */
-export class FlyingEnemy {
+import { BaseEnemy } from './BaseEnemy.js';
+
+export class FlyingEnemy extends BaseEnemy {
   constructor(canvas, gameSpeed) {
-    this.canvas = canvas;
-    this.x = canvas.width + Math.random() * 200;
-    // Flying height - upper third of canvas (15-45% from top)
+    super(canvas, gameSpeed, {
+      width: 35,
+      height: 30,
+      health: 1,
+      xpValue: 5,
+      speedMultiplier: 0.9 + Math.random() * 0.4,
+      type: 'flying'
+    });
+
+    // Override Y position for flying height - upper third of canvas (15-45% from top)
     this.y = canvas.height * 0.15 + Math.random() * (canvas.height * 0.3);
-    this.width = 35;
-    this.height = 30;
-    this.speed = gameSpeed * (0.9 + Math.random() * 0.4); // Varies speed
-    this.health = 1;
-    this.maxHealth = 1;
-    this.xpValue = 5; // Reduced XP for better balance
-    this.type = 'flying';
 
     // Animation
-    this.frameCount = 0;
     this.wingFrame = 0;
   }
 
   draw(ctx) {
-    // Pterodactyl emoji or simple representation
-    ctx.font = '30px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    // Flap animation
+    // Flap animation - alternate between emojis
     const emoji = this.wingFrame === 0 ? '🦅' : '🦉';
-    ctx.fillText(emoji, this.x + this.width / 2, this.y + this.height / 2);
+    this.drawEmoji(ctx, emoji, 30);
 
-    // Health bar if damaged
-    if (this.health < this.maxHealth) {
-      const barWidth = 30;
-      const barHeight = 3;
-      const healthPercent = this.health / this.maxHealth;
-
-      ctx.fillStyle = '#FF0000';
-      ctx.fillRect(this.x + (this.width - barWidth) / 2, this.y - 10, barWidth, barHeight);
-      ctx.fillStyle = '#00FF00';
-      ctx.fillRect(this.x + (this.width - barWidth) / 2, this.y - 10, barWidth * healthPercent, barHeight);
-    }
+    // Draw health bar if damaged
+    this.drawHealthBar(ctx);
   }
 
   update() {
-    this.x -= this.speed;
+    super.update();
 
-    // Slight bobbing motion
-    this.frameCount++;
+    // Wing flap animation
     if (this.frameCount % 15 === 0) {
       this.wingFrame = (this.wingFrame + 1) % 2;
     }
-  }
-
-  takeDamage(amount = 1) {
-    this.health -= amount;
-    return this.health <= 0;
-  }
-
-  isOffScreen() {
-    return this.x + this.width < 0;
-  }
-
-  isDead() {
-    return this.health <= 0;
   }
 }

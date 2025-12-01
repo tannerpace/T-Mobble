@@ -12,6 +12,7 @@ import { Obstacle } from '../entities/Obstacle.js';
 import { PowerUp } from '../entities/PowerUp.js';
 import { TankEnemy } from '../entities/TankEnemy.js';
 import { XPGem } from '../entities/XPGem.js';
+import { CoinUpgradeManager } from '../utils/CoinUpgradeManager.js';
 import { DifficultyScaling } from '../utils/DifficultyScaling.js';
 import { ExperienceManager } from '../utils/ExperienceManager.js';
 import { MetaProgression } from '../utils/MetaProgression.js';
@@ -22,6 +23,7 @@ import { SynergySystem } from '../utils/SynergySystem.js';
 import { UpgradeSystem } from '../utils/UpgradeSystem.js';
 import { WeaponSystem } from '../utils/WeaponSystem.js';
 import { checkCollision } from '../utils/collision.js';
+import { escapeHtml } from '../utils/helpers.js';
 import { InputHandler } from './InputHandler.js';
 import { Renderer } from './Renderer.js';
 
@@ -39,9 +41,6 @@ export class Game {
     this.gravity = 0.5;
     this.frameCount = 0;
     this.animationId = null;
-    this.powerUpCount = 0;
-    this.coinUpgrades = 0; // Track number of coin upgrades purchased
-    this.powerUpUpgradeThreshold = 1; // Start at 1 coin (will double each time)
     this.isSubmitting = false;
     this.isPaused = false;
     this.regenerationCounter = 0;
@@ -71,6 +70,16 @@ export class Game {
     this.synergySystem = new SynergySystem();
     this.metaProgression = new MetaProgression();
     this.runModifiers = new RunModifiers();
+
+    // Coin upgrade manager
+    this.coinManager = new CoinUpgradeManager({
+      onUpgradeAvailable: () => {
+        if (this.gameRunning && !this.gameOver) {
+          this.pauseGame();
+          setTimeout(() => this.showUpgradeSelection(), 100);
+        }
+      }
+    });
 
     // Entities
     this.dino = new Dino(canvas, this.gravity, assets);
@@ -500,11 +509,9 @@ export class Game {
     this.upgradeSystem.reset();
     this.weaponSystem.reset();
     this.synergySystem.reset();
+    this.coinManager.reset();
     this.gameSpeed = 2;
     this.frameCount = 0;
-    this.powerUpCount = 0;
-    this.coinUpgrades = 0;
-    this.powerUpUpgradeThreshold = 1;
     this.gameOver = false;
     this.isPaused = false;
     this.regenerationCounter = 0;
@@ -713,13 +720,12 @@ export class Game {
       // Check collision with dino
       if (powerUp.checkCollision(this.dino)) {
         powerUp.collected = true;
-        this.powerUpCount += 1;
-        console.log('Coin collected! Total:', this.powerUpCount);
 
         // Gold coin particles
+        const { x: centerX, y: centerY } = powerUp.getCenter();
         this.particleSystem.spawnParticles(
-          powerUp.x + powerUp.width / 2,
-          powerUp.y + powerUp.height / 2,
+          centerX,
+          centerY,
           ParticleSystem.COLORS.COIN_COLLECT,
           10
         );
@@ -728,21 +734,8 @@ export class Game {
         this.assets.blingSound.currentTime = 0;
         this.assets.blingSound.play().catch(e => console.log('Audio play failed:', e));
 
-        // Check if player has enough for an upgrade
-        if (this.powerUpCount >= this.powerUpUpgradeThreshold) {
-          this.powerUpCount -= this.powerUpUpgradeThreshold;
-          this.coinUpgrades++;
-
-          // Double the threshold for next upgrade (power of 2: 1, 2, 4, 8, 16, 32...)
-          this.powerUpUpgradeThreshold = Math.pow(2, this.coinUpgrades);
-
-          console.log(`Upgrade #${this.coinUpgrades} available! Next upgrade at ${this.powerUpUpgradeThreshold} coins. Remaining: ${this.powerUpCount}`);
-
-          if (this.gameRunning && !this.gameOver) {
-            this.pauseGame();
-            setTimeout(() => this.showUpgradeSelection(), 100);
-          }
-        }
+        // Add coin through manager (handles upgrade logic)
+        this.coinManager.addCoins(1);
       }
 
       // Remove if off-screen or collected
@@ -842,13 +835,12 @@ export class Game {
       // Check collision with dino
       if (coin.checkCollision(this.dino)) {
         const coinValue = coin.collect();
-        this.powerUpCount += coinValue;
-        console.log(`Coin collected! Value: ${coinValue}x, Total: ${this.powerUpCount}`);
 
         // Gold coin particles (extra sparkly for 2x coins)
+        const { x: centerX, y: centerY } = coin.getCenter();
         this.particleSystem.spawnParticles(
-          coin.x,
-          coin.y,
+          centerX,
+          centerY,
           ParticleSystem.COLORS.COIN_COLLECT,
           coinValue >= 2 ? 15 : 10
         );
@@ -857,21 +849,8 @@ export class Game {
         this.assets.blingSound.currentTime = 0;
         this.assets.blingSound.play().catch(e => console.log('Audio play failed:', e));
 
-        // Check if player has enough for an upgrade
-        if (this.powerUpCount >= this.powerUpUpgradeThreshold) {
-          this.powerUpCount -= this.powerUpUpgradeThreshold;
-          this.coinUpgrades++;
-
-          // Double the threshold for next upgrade (power of 2: 1, 2, 4, 8, 16, 32...)
-          this.powerUpUpgradeThreshold = Math.pow(2, this.coinUpgrades);
-
-          console.log(`Upgrade #${this.coinUpgrades} available! Next upgrade at ${this.powerUpUpgradeThreshold} coins. Remaining: ${this.powerUpCount}`);
-
-          if (this.gameRunning && !this.gameOver) {
-            this.pauseGame();
-            setTimeout(() => this.showUpgradeSelection(), 100);
-          }
-        }
+        // Add coin through manager (handles upgrade logic)
+        this.coinManager.addCoins(coinValue);
 
         this.coins.splice(i, 1);
         continue;
@@ -1187,10 +1166,11 @@ export class Game {
 
     // Draw UI elements (not affected by shake)
     // Draw coin counter
+    const { powerUpCount, threshold } = this.coinManager.getState();
     this.ctx.fillStyle = '#FFD700';
     this.ctx.font = 'bold 16px Courier New';
     this.ctx.textAlign = 'left';
-    this.ctx.fillText('💵 ' + this.powerUpCount + '/' + this.powerUpUpgradeThreshold, 20, 30);
+    this.ctx.fillText('💵 ' + powerUpCount + '/' + threshold, 20, 30);
   }
 
   /**
@@ -1301,7 +1281,7 @@ export class Game {
           html += `
             <li class="leaderboard-item${topClass}${top3Class}">
               <span class="leaderboard-rank">${icon} #${rank}</span>
-              <span class="leaderboard-name">${this.escapeHtml(entry.name)}</span>
+              <span class="leaderboard-name">${escapeHtml(entry.name)}</span>
               <span class="leaderboard-score">${entry.score}</span>
             </li>
           `;
@@ -1423,14 +1403,5 @@ export class Game {
         submitBtn.disabled = false;
       }
     }
-  }
-
-  /**
-   * Escape HTML to prevent XSS
-   */
-  escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
   }
 }

@@ -3,25 +3,13 @@
  */
 import { Game } from './game/Game.js';
 import { AssetManager } from './utils/AssetManager.js';
+import { debounce } from './utils/helpers.js';
 
 // Get canvas element
 const canvas = document.getElementById('gameCanvas');
 
 // Base aspect ratio (4:1 for runner game)
 const ASPECT_RATIO = 4;
-
-// Debounce helper
-let resizeTimeout;
-function debounce(func, wait) {
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(resizeTimeout);
-      func(...args);
-    };
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(later, wait);
-  };
-}
 
 // Handle responsive canvas sizing
 function resizeCanvas() {
