@@ -1,9 +1,15 @@
-const CACHE_NAME = 'dino-game-v99';
+const CACHE_NAME = 'dino-game-v118';
 
 
 // Get base path dynamically
 const getBasePath = () => {
   const location = self.location;
+
+  // Local development (localhost or 127.0.0.1)
+  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+    return '';
+  }
+
   const isVSCode = location.hostname.includes('vscode.dev') || location.hostname.includes('vscode.com');
 
   if (isVSCode) {

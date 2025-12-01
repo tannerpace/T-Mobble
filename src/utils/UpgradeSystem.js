@@ -286,14 +286,24 @@ export class UpgradeSystem {
       weight *= 3.0;
     }
 
-    // Offer weapon diversity
-    if (playerState.weaponCount < 2 && upgrade.category === 'weapon' && upgrade.isNew) {
-      weight *= 1.8;
+    // STRONGLY prioritize weapon diversity - offer new weapons more often
+    if (upgrade.category === 'weapon' && currentLevel === 0) {
+      // New weapon unlock
+      if (playerState.weaponCount < 2) {
+        weight *= 5.0; // Very high priority for first 2 weapons
+      } else if (playerState.weaponCount < 3) {
+        weight *= 3.0; // Still prioritize 3rd weapon
+      }
     }
 
-    // Tier gating
-    if (playerLevel < 6 && upgrade.tier === 2) {
-      weight *= 0.2;
+    // Reduce weight for leveling up weapons when player doesn't have all weapons yet
+    if (upgrade.category === 'weapon' && currentLevel > 0 && playerState.weaponCount < 3) {
+      weight *= 0.3; // Strongly discourage leveling weapons before unlocking variety
+    }
+
+    // Tier gating - much less restrictive for weapons
+    if (playerLevel < 3 && upgrade.tier === 2) {
+      weight *= 0.5; // Only slight reduction for very early game
     }
     if (playerLevel < 13 && upgrade.tier === 3) {
       weight = 0;
@@ -440,7 +450,9 @@ export class UpgradeSystem {
       magnetRange: 0,
       regeneration: false,
       damageMultiplier: 1.0,
-      xpMultiplier: 1.0
+      xpMultiplier: 1.0,
+      jumpPowerMod: 1.0,
+      doubleJump: false
     };
 
     // Apply passive upgrades

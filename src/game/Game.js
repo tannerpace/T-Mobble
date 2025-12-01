@@ -575,12 +575,10 @@ export class Game {
   }
 
   /**
-   * Spawn a power-up
+   * Spawn a power-up (guaranteed spawn, typically from tank enemy drops)
    */
   spawnPowerUp() {
-    if (Math.random() < 0.3) {
-      this.powerUps.push(new PowerUp(this.canvas, this.gameSpeed));
-    }
+    this.powerUps.push(new PowerUp(this.canvas, this.gameSpeed));
   }
 
   /**
@@ -660,11 +658,6 @@ export class Game {
 
     if (this.frameCount % enemySpawnInterval === 0 && Math.random() < enemySpawnChance) {
       this.spawnEnemy();
-    }
-
-    // Spawn power-ups (coins for weapon upgrades)
-    if (this.frameCount % 250 === 0 && Math.random() < 0.6) {
-      this.spawnPowerUp();
     }
 
     // Spawn health pickups (rare, only when damaged)
@@ -803,6 +796,13 @@ export class Game {
         const xpMultiplier = effects.xpMultiplier || 1;
         this.xpManager.addXP(Math.floor(xpValue * xpMultiplier));
 
+        // Play jewl sound
+        const jewlSound = this.assets.jewlSound;
+        if (jewlSound) {
+          jewlSound.currentTime = 0;
+          jewlSound.play().catch(e => console.log('Audio play failed:', e));
+        }
+
         // Cyan/blue XP particles
         this.particleSystem.spawnParticles(
           gem.x,
@@ -896,9 +896,15 @@ export class Game {
             );
             this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
 
-            // Spawn coin for elite enemies
-            if (enemy.type === 'elite' && enemy.getCoinDrop) {
-              this.spawnCoin(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.getCoinDrop());
+            // Spawn PowerUp coin for tank enemies
+            if (enemy.type === 'tank') {
+              this.spawnPowerUp();
+            }
+
+            // Spawn 2x PowerUp coins for elite enemies (tougher = better reward)
+            if (enemy.type === 'elite') {
+              this.spawnPowerUp();
+              this.spawnPowerUp();
             }
 
             this.enemies.splice(j, 1);
@@ -951,6 +957,17 @@ export class Game {
         this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
         this.enemiesKilled++; // Track kills for statistics
         this.screenShake.shake(8, 150); // Bigger shake on kill
+
+        // Spawn PowerUp coin for tank enemies
+        if (enemy.type === 'tank') {
+          this.spawnPowerUp();
+        }
+
+        // Spawn 2x PowerUp coins for elite enemies (tougher = better reward)
+        if (enemy.type === 'elite') {
+          this.spawnPowerUp();
+          this.spawnPowerUp();
+        }
       } else {
         // Enemy hit - small explosion
         this.particleSystem.spawnParticles(

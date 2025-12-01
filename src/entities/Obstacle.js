@@ -14,14 +14,11 @@ export class Obstacle {
   }
 
   draw(ctx) {
-    // Draw palm tree image
-    if (this.palmImg.complete) {
-      ctx.drawImage(this.palmImg, this.x, this.y, this.width, this.height);
-    } else {
-      // Fallback while image loads
-      ctx.fillStyle = '#535353';
-      ctx.fillRect(this.x, this.y, this.width, this.height);
-    }
+    // Draw cactus emoji centered on the obstacle
+    ctx.font = `${this.height}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🌵', this.x + this.width / 2, this.y + this.height / 2);
   }
 
   update() {
