@@ -21,7 +21,7 @@ export class TankEnemy extends BaseEnemy {
   draw(ctx) {
     // Different emoji based on damage
     const emoji = this.health <= 2 ? '🐘' : '🦏';
-    this.drawEmoji(ctx, emoji, 50);
+    this.drawEmoji(ctx, emoji, this.height);
 
     // Health bar with color coding
     this.drawHealthBar(ctx, {
