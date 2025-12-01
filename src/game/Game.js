@@ -35,7 +35,7 @@ export class Game {
     this.gameRunning = false;
     this.gameOver = false;
     this.gameSpeed = 2;
-    this.maxGameSpeed = 12; // Raised ceiling for late game
+    this.maxGameSpeed = 8; // Cap maximum speed for playability
     this.gravity = 0.5;
     this.frameCount = 0;
     this.animationId = null;
@@ -693,10 +693,13 @@ export class Game {
     this.scoreManager.increment();
     this.updateScoreDisplay();
 
-    // Continuous speed scaling based on score
-    const baseSpeed = 2.0;
-    const speedIncrement = 0.008 * this.scoreManager.score;
-    this.gameSpeed = Math.min(this.maxGameSpeed, baseSpeed + speedIncrement * speedModifier);
+    // Increase difficulty gradually with diminishing returns
+    // Slower increase at higher speeds to prevent it getting too fast
+    if (this.scoreManager.score % 300 === 0 && this.gameSpeed < this.maxGameSpeed) {
+      // Calculate increment based on current speed (smaller increments as speed increases)
+      const speedIncrement = this.gameSpeed < 4 ? 0.3 : this.gameSpeed < 6 ? 0.2 : 0.1;
+      this.gameSpeed = Math.min(this.maxGameSpeed, this.gameSpeed + (speedIncrement * speedModifier));
+    }
   }
 
   /**
