@@ -561,7 +561,9 @@ export class Game {
    * Spawn an enemy (flying, tank, or elite)
    */
   spawnEnemy() {
+    const currentScore = this.scoreManager.score;
     const rand = Math.random();
+
     if (rand < 0.6) {
       // 60% chance for flying enemy
       this.enemies.push(new FlyingEnemy(this.canvas, this.gameSpeed));
@@ -569,8 +571,13 @@ export class Game {
       // 25% chance for tank enemy
       this.enemies.push(new TankEnemy(this.canvas, this.gameSpeed));
     } else {
-      // 15% chance for elite enemy (drops 2x coins!)
-      this.enemies.push(new EliteEnemy(this.canvas, this.gameSpeed));
+      // 15% chance for elite enemy - only spawn if score >= 500
+      if (currentScore >= 500) {
+        this.enemies.push(new EliteEnemy(this.canvas, this.gameSpeed));
+      } else {
+        // Spawn tank instead if score too low
+        this.enemies.push(new TankEnemy(this.canvas, this.gameSpeed));
+      }
     }
   }
 
@@ -1013,8 +1020,17 @@ export class Game {
             this.handleGameOver();
           }
         }
+        // If invulnerable, no damage/effects but still show bounce particles
+        else {
+          this.particleSystem.spawnParticles(
+            enemy.x + enemy.width / 2,
+            enemy.y + enemy.height / 2,
+            ParticleSystem.COLORS.XP_COLLECT,
+            5
+          );
+        }
 
-        // Remove enemy after hit
+        // Always remove enemy after collision (whether damage taken or not)
         this.enemies.splice(i, 1);
         continue;
       }
@@ -1049,7 +1065,18 @@ export class Game {
           if (this.dino.isDead()) {
             this.handleGameOver();
           }
-        }        // Remove obstacle after hit
+        }
+        // If invulnerable, no damage/effects but still show bounce particles
+        else {
+          this.particleSystem.spawnParticles(
+            obstacle.x + obstacle.width / 2,
+            obstacle.y + obstacle.height / 2,
+            ParticleSystem.COLORS.XP_COLLECT,
+            5
+          );
+        }
+
+        // Always remove obstacle after collision (whether damage taken or not)
         this.obstacles.splice(i, 1);
         continue;
       }

@@ -54,12 +54,12 @@ export class UpgradeSystem {
           category: 'survival'
         },
         {
-          id: 'speed_boost',
-          name: 'Speed Boost',
-          description: '+10% move speed',
-          icon: '⚡',
+          id: 'jump_height',
+          name: 'Jump Boost',
+          description: '+10% jump height',
+          icon: '🦘',
           tier: 1,
-          maxLevel: 2,
+          maxLevel: 3,
           category: 'survival'
         },
         {
@@ -446,7 +446,7 @@ export class UpgradeSystem {
       maxHealthBonus: 0,
       invulnTimeBonus: 0,
       dodgeChance: 0,
-      speedBonus: 0,
+      jumpBonus: 0,
       magnetRange: 0,
       regeneration: false,
       damageMultiplier: 1.0,
@@ -467,9 +467,9 @@ export class UpgradeSystem {
     effects.dodgeChance = evasion * 0.15; // 15% per level
     effects.evasionLevel = evasion; // For visual effects
 
-    const speedBoost = this.passiveUpgrades.get('speed_boost') || 0;
-    effects.speedBonus = speedBoost * 0.10; // 10% per level
-    effects.speedBoostLevel = speedBoost; // For visual effects
+    const jumpHeight = this.passiveUpgrades.get('jump_height') || 0;
+    effects.jumpBonus = jumpHeight * 0.10; // 10% per level
+    effects.jumpHeightLevel = jumpHeight; // For visual effects
 
     const magnet = this.passiveUpgrades.get('magnet') || 0;
     effects.magnetRange = magnet * 50; // +50px per level

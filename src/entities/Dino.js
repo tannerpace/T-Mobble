@@ -46,7 +46,7 @@ export class Dino {
     this.upgradeEffects = {
       toughSkin: 0,
       evasion: 0,
-      speedBoost: 0,
+      jumpHeight: 0,
       magnet: 0,
       damageMultiplier: 1.0
     };
@@ -77,15 +77,16 @@ export class Dino {
       ctx.restore();
     }
 
-    // Speed trails (yellow/electric)
-    if (this.upgradeEffects.speedBoost > 0 && this.grounded) {
-      const trailCount = this.upgradeEffects.speedBoost;
+    // Jump boost particles (upward sparks when jumping)
+    if (this.upgradeEffects.jumpHeight > 0 && !this.grounded) {
+      const particleCount = this.upgradeEffects.jumpHeight * 2;
       ctx.save();
-      for (let i = 0; i < trailCount; i++) {
-        ctx.globalAlpha = 0.3 - (i * 0.1);
-        ctx.fillStyle = '#FFFF00';
-        const offset = (i + 1) * 8;
-        ctx.fillRect(this.x - offset, this.y, this.width / 3, this.height);
+      for (let i = 0; i < particleCount; i++) {
+        ctx.globalAlpha = 0.4 - (Math.random() * 0.2);
+        ctx.fillStyle = '#FFD700';
+        const offsetX = (Math.random() - 0.5) * this.width;
+        const offsetY = Math.random() * 10;
+        ctx.fillRect(centerX + offsetX, this.y + this.height + offsetY, 3, 3);
       }
       ctx.restore();
     }
@@ -278,7 +279,11 @@ export class Dino {
   applyUpgradeEffects(effects) {
     this.maxHealth = 3 + effects.maxHealthBonus;
     this.health = Math.min(this.health, this.maxHealth);
-    this.jumpPower = -12 * effects.jumpPowerMod;
+
+    // Apply jump height bonus
+    const jumpBonusMult = 1 + (effects.jumpBonus || 0);
+    this.jumpPower = -12 * jumpBonusMult * (effects.jumpPowerMod || 1);
+
     this.hasDoubleJump = effects.doubleJump;
 
     // Apply invulnerability time bonus from Tough Skin
@@ -288,7 +293,7 @@ export class Dino {
     this.upgradeEffects = {
       toughSkin: effects.toughSkinLevel || 0,
       evasion: effects.evasionLevel || 0,
-      speedBoost: effects.speedBoostLevel || 0,
+      jumpHeight: effects.jumpHeightLevel || 0,
       magnet: effects.magnetLevel || 0,
       damageMultiplier: effects.damageMultiplier || 1.0
     };

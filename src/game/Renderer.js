@@ -150,8 +150,8 @@ export class Renderer {
           case 'evasion':
             drawUpgrade('💨', 'Dodge', level, '#AAFFAA');
             break;
-          case 'speed_boost':
-            drawUpgrade('⚡', 'Speed', level, '#FFFF44');
+          case 'jump_height':
+            drawUpgrade('🦘', 'Jump', level, '#FFD700');
             break;
           case 'magnet':
             drawUpgrade('🧲', 'Magnet', level, '#FF44FF');
