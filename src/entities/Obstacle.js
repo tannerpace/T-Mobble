@@ -14,11 +14,11 @@ export class Obstacle {
   }
 
   draw(ctx) {
-    // Draw cactus emoji centered on the obstacle
+    // Draw cactus emoji from bottom (so it sits on ground)
     ctx.font = `${this.height}px Arial`;
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('🌵', this.x + this.width / 2, this.y + this.height / 2);
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('🌵', this.x + this.width / 2, this.y + this.height);
   }
 
   update() {

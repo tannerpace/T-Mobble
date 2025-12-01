@@ -129,7 +129,7 @@ export class BaseEnemy extends BaseEntity {
   drawEmoji(ctx, emoji, fontSize = 30) {
     ctx.font = `${fontSize}px Arial`;
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    ctx.textBaseline = 'bottom'; // Draw from bottom so emoji sits on ground
 
     // Damage flash effect
     if (this.damageFlash > 0) {
@@ -137,8 +137,8 @@ export class BaseEnemy extends BaseEntity {
       ctx.shadowBlur = 10;
     }
 
-    const { x: centerX, y: centerY } = this.getCenter();
-    ctx.fillText(emoji, centerX, centerY);
+    const { x: centerX } = this.getCenter();
+    ctx.fillText(emoji, centerX, this.y + this.height);
 
     ctx.shadowBlur = 0;
   }

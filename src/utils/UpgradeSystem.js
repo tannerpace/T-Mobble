@@ -461,15 +461,19 @@ export class UpgradeSystem {
 
     const toughSkin = this.passiveUpgrades.get('tough_skin') || 0;
     effects.invulnTimeBonus = toughSkin * 60; // +60 frames per level
+    effects.toughSkinLevel = toughSkin; // For visual effects
 
     const evasion = this.passiveUpgrades.get('evasion') || 0;
     effects.dodgeChance = evasion * 0.15; // 15% per level
+    effects.evasionLevel = evasion; // For visual effects
 
     const speedBoost = this.passiveUpgrades.get('speed_boost') || 0;
     effects.speedBonus = speedBoost * 0.10; // 10% per level
+    effects.speedBoostLevel = speedBoost; // For visual effects
 
     const magnet = this.passiveUpgrades.get('magnet') || 0;
     effects.magnetRange = magnet * 50; // +50px per level
+    effects.magnetLevel = magnet; // For visual effects
 
     // Apply ultimate upgrades
     if (this.ultimateSlot === 'glass_cannon') {
