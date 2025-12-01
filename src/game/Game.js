@@ -1188,6 +1188,9 @@ export class Game {
     this.ctx.font = 'bold 16px Courier New';
     this.ctx.textAlign = 'left';
     this.ctx.fillText('💵 ' + powerUpCount + '/' + threshold, 20, 30);
+
+    // Draw active upgrade status indicators
+    this.renderer.drawUpgradeStatus(this.upgradeSystem);
   }
 
   /**
