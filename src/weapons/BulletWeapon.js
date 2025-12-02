@@ -6,17 +6,17 @@ import { BaseWeapon } from './BaseWeapon.js';
 
 export class BulletWeapon extends BaseWeapon {
   constructor(assets) {
-    super('Blaster', 'Fires bullets that pierce enemies', '🔫');
-    this.fireRateBase = 30;
+    super('Blaster', 'Fires powerful bullets with knockback', '🔫');
+    this.fireRateBase = 60; // Slower fire rate (was 30)
     this.level = 1;
-    this.maxRange = 300; // Base range
+    this.maxRange = 800; // Much longer range (was 500)
     this.assets = assets;
   }
 
   setLevel(level) {
     this.level = level;
-    // Increase range with each level: 300, 360, 420, 480, then add pierce
-    this.maxRange = 300 + (Math.min(level - 1, 3) * 60);
+    // Increase range with each level: 800, 950, 1100, 1250, then add pierce
+    this.maxRange = 800 + (Math.min(level - 1, 3) * 150);
   }
 
   update(dino, projectiles, effects = {}) {
@@ -35,7 +35,7 @@ export class BulletWeapon extends BaseWeapon {
     const bulletX = dino.x + dino.width;
     const count = effects.bulletCount || 1;
     const spreadAngle = effects.spreadAngle || 0;
-    const speed = 8 * (effects.bulletSpeedMod || 1);
+    const speed = 12 * (effects.bulletSpeedMod || 1); // Faster bullets (was 8)
     // Add pierce at level 5+
     const pierce = this.level >= 5 ? (this.level - 4) : (effects.pierceCount || 0);
 
@@ -48,6 +48,8 @@ export class BulletWeapon extends BaseWeapon {
     if (count === 1) {
       const bullet = new Bullet(bulletX, bulletY, 0, speed, pierce);
       bullet.maxRange = this.maxRange;
+      bullet.damage = 2; // Increased damage (was 1)
+      bullet.knockback = 15; // Add knockback effect
       projectiles.push(bullet);
     } else {
       const angleStep = spreadAngle / (count - 1);
@@ -57,6 +59,8 @@ export class BulletWeapon extends BaseWeapon {
         const angle = startAngle + (angleStep * i);
         const bullet = new Bullet(bulletX, bulletY, angle, speed, pierce);
         bullet.maxRange = this.maxRange;
+        bullet.damage = 2; // Increased damage
+        bullet.knockback = 15; // Add knockback effect
         projectiles.push(bullet);
       }
     }

@@ -2,8 +2,10 @@
  * WeaponSystem - Manages multiple auto-firing weapons with various patterns
  */
 import { BulletWeapon } from '../weapons/BulletWeapon.js';
+import { FlameThrowerWeapon } from '../weapons/FlameThrowerWeapon.js';
 import { LaserWeapon } from '../weapons/LaserWeapon.js';
 import { PushWeapon } from '../weapons/PushWeapon.js';
+import { VolcanoWeapon } from '../weapons/VolcanoWeapon.js';
 import { WhipWeapon } from '../weapons/WhipWeapon.js';
 
 export class WeaponSystem {
@@ -17,6 +19,8 @@ export class WeaponSystem {
       new WhipWeapon(assets),
       new LaserWeapon(assets),
       new PushWeapon(assets)
+      new FlameThrowerWeapon(assets),
+      new VolcanoWeapon(assets)
     ];
 
     // Active weapons (starts with blaster)
@@ -60,9 +64,10 @@ export class WeaponSystem {
       'whip': new WhipWeapon(this.assets),
       'laser': new LaserWeapon(this.assets),
       'push': new PushWeapon(this.assets)
+      'flamethrower': new FlameThrowerWeapon(this.assets),
+      'volcano': new VolcanoWeapon(this.assets)
       // More weapons can be added here as they're implemented
     };
-
     const weapon = weaponMap[weaponId];
     if (weapon) {
       // Check if weapon type already active
@@ -84,11 +89,11 @@ export class WeaponSystem {
       'whip': 'Whip',
       'laser': 'Laser Beam',
       'push': 'Water Cannon'
+      'flamethrower': 'Flame Thrower',
+      'volcano': 'Volcano Launcher'
     };
-
     const weaponName = weaponMap[weaponId];
     const weapon = this.activeWeapons.find(w => w.name === weaponName);
-
     if (weapon && weapon.setLevel) {
       weapon.setLevel(newLevel);
       return true;

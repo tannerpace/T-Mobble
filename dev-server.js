@@ -29,7 +29,7 @@ if (match) {
   console.log('⚠️  Could not find cache version, skipping update');
 }
 
-console.log('🚀 Starting development server on http://localhost:3000');
+console.log('🚀 Starting development server...');
 console.log('📱 Access game at: http://localhost:3000/public/\n');
 
 // Start server

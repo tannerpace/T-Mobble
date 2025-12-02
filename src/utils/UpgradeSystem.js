@@ -37,12 +37,27 @@ export class UpgradeSystem {
         maxLevel: 5
       },
       {
+
         id: 'push',
         name: 'Water Cannon',
         description: 'Knockback weapon that pushes enemies',
         icon: '💦',
         weaponType: 'push',
-        maxLevel: 5
+      },
+        id: 'flamethrower',
+        name: 'Flame Thrower',
+        description: 'Flames that cause burning damage',
+        icon: '🔥',
+        weaponType: 'flamethrower',
+        maxLevel: 6
+      },
+      {
+        id: 'volcano',
+        name: 'Volcano Launcher',
+        description: 'Arc projectile spawns volcano hazards',
+        icon: '🌋',
+        weaponType: 'volcano',
+        maxLevel: 7
       }
     ];
   }
@@ -75,7 +90,7 @@ export class UpgradeSystem {
         'Length +40% - Longer range',
         'Dual Laser - Fire two beams',
         'Piercing Laser - Unlimited pierce'
-      ],
+        ],
       push: [
         'Unlock Water Cannon - Pushes enemies back',
         'Knockback +33% - Stronger water blast',
@@ -83,6 +98,22 @@ export class UpgradeSystem {
         'Knockback +67% - Even stronger blast',
         'Range +50% - Maximum water range',
         'Ultimate Blast - Maximum force and range'
+        ],
+      flamethrower: [
+        'Unlock Flame Thrower - Enemies burn over time',
+        'Burn +50% - Stronger burning damage',
+        'Range +25% - Longer flame stream',
+        'Duration +50% - Enemies burn longer',
+        'Inferno - Wider flame cone',
+        'Hellfire - Maximum burn damage'
+      ],
+      volcano: [
+        'Unlock Volcano Launcher - Arc projectile spawns volcano hazards',
+        'Fire Rate +15% - Launch slightly faster',
+        'Hazard Duration +25% - Volcanoes last longer',
+        'Fire Rate +25% - Even faster launches',
+        'Hazard Damage +50% - More damage per tick',
+        'Fire Rate +35% - Maximum launch speed'
       ]
     };
 

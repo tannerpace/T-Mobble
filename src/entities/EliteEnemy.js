@@ -17,8 +17,7 @@ export class EliteEnemy extends BaseEnemy {
     // Override X position for variation
     this.x = canvas.width + Math.random() * 250;
 
-    // Elite-specific properties
-    this.coinValue = 2; // Drops a 2x value coin
+    // Elite enemies drop bonus XP (handled in Game.js collision detection)
   }
 
   draw(ctx) {
@@ -48,10 +47,5 @@ export class EliteEnemy extends BaseEnemy {
 
     // Elite label
     this.drawLabel(ctx, 'ELITE');
-  }
-
-  // Return the coin value this enemy drops
-  getCoinDrop() {
-    return this.coinValue;
   }
 }

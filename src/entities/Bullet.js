@@ -14,6 +14,8 @@ export class Bullet {
     this.hitCount = 0; // How many enemies it has hit
     this.active = true;
     this.maxRange = 300; // Default range, can be overridden
+    this.damage = 1; // Damage dealt to enemies
+    this.knockback = 0; // Knockback force applied to enemies
 
     // Calculate velocity based on angle
     const radians = (angle * Math.PI) / 180;

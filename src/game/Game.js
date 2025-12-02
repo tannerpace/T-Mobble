@@ -3,17 +3,18 @@
  */
 import { Bullet } from '../entities/Bullet.js';
 import { Cloud } from '../entities/Cloud.js';
-import { Coin } from '../entities/Coin.js';
 import { Dino } from '../entities/Dino.js';
 import { EliteEnemy } from '../entities/EliteEnemy.js';
 import { FlyingEnemy } from '../entities/FlyingEnemy.js';
 import { HealthPickup } from '../entities/HealthPickup.js';
+import { MediumEnemy } from '../entities/MediumEnemy.js';
 import { Obstacle } from '../entities/Obstacle.js';
 import { PowerUp } from '../entities/PowerUp.js';
 import { PushBullet } from '../entities/PushBullet.js';
 import { TankEnemy } from '../entities/TankEnemy.js';
+import { VolcanoHazard } from '../entities/VolcanoHazard.js';
 import { XPGem } from '../entities/XPGem.js';
-import { CoinUpgradeManager } from '../utils/CoinUpgradeManager.js';
+// Unified progression system - single XP currency (Fibonacci-based)
 import { ExperienceManager } from '../utils/ExperienceManager.js';
 import { ParticleSystem, ScreenShake } from '../utils/ParticleSystem.js';
 import { ScoreManager } from '../utils/ScoreManager.js';
@@ -33,9 +34,9 @@ export class Game {
     // Game state
     this.gameRunning = false;
     this.gameOver = false;
-    this.gameSpeed = 2;
-    this.maxGameSpeed = 8; // Cap maximum speed for playability
-    this.gravity = 0.5;
+    this.gameSpeed = 1.3;
+    this.maxGameSpeed = 9; // Cap maximum speed for playability
+    this.gravity = 0.2; // Controls speed of vertical movement (lower = slower)
     this.frameCount = 0;
     this.animationId = null;
     this.isSubmitting = false;
@@ -51,26 +52,16 @@ export class Game {
     this.particleSystem = new ParticleSystem();
     this.screenShake = new ScreenShake();
 
-    // Coin upgrade manager
-    this.coinManager = new CoinUpgradeManager({
-      onUpgradeAvailable: () => {
-        if (this.gameRunning && !this.gameOver) {
-          this.pauseGame();
-          setTimeout(() => this.showUpgradeSelection(), 100);
-        }
-      }
-    });
-
     // Entities
     this.dino = new Dino(canvas, this.gravity, assets);
     this.obstacles = [];
     this.enemies = []; // Flying, tank, and elite enemies
-    this.xpGems = [];
-    this.coins = []; // Coins dropped by enemies
+    this.xpGems = []; // XP gems dropped by enemies (unified progression)
     this.healthPickups = []; // Health restoration items
     this.clouds = [new Cloud(canvas), new Cloud(canvas), new Cloud(canvas)];
     this.powerUps = [];
     this.bullets = [];
+    this.volcanoHazards = []; // Ground hazards spawned by volcano weapon
 
     // Input handling
     const jumpBtn = document.getElementById('jumpBtn');
@@ -84,17 +75,44 @@ export class Game {
     this.setupXPSystem();
     this.setupUpgradeUI();
 
-    // Set default starting weapon (Blaster)
-    this.weaponSystem.selectWeapon(0);
-    const weaponIcon = document.getElementById('weaponIcon');
-    const weaponName = document.getElementById('weaponName');
-    if (weaponIcon) weaponIcon.textContent = '🔫';
-    if (weaponName) weaponName.textContent = 'Blaster';
+    // Setup weapon selection UI
+    this.setupWeaponSelectionUI();
+
+    // Load starting weapon from localStorage or use default
+    this.loadStartingWeapon();
 
     // Update UI
     this.updateScoreDisplay();
     this.updateHealthDisplay();
     this.updateXPDisplay();
+  }
+
+  /**
+   * Load starting weapon from localStorage or use default
+   */
+  loadStartingWeapon() {
+    const savedWeaponIndex = localStorage.getItem('preferredStartingWeapon');
+    const weaponIndex = savedWeaponIndex !== null ? parseInt(savedWeaponIndex, 10) : 0;
+
+    // Validate the weapon index
+    const availableWeapons = this.weaponSystem.getAvailableWeapons();
+    const validIndex = weaponIndex >= 0 && weaponIndex < availableWeapons.length ? weaponIndex : 0;
+
+    this.weaponSystem.selectWeapon(validIndex);
+
+    // Update UI
+    const weapon = availableWeapons[validIndex];
+    const weaponIcon = document.getElementById('weaponIcon');
+    const weaponName = document.getElementById('weaponName');
+    if (weaponIcon) weaponIcon.textContent = weapon.icon;
+    if (weaponName) weaponName.textContent = weapon.name;
+  }
+
+  /**
+   * Save starting weapon preference to localStorage
+   */
+  saveStartingWeapon(weaponIndex) {
+    localStorage.setItem('preferredStartingWeapon', weaponIndex.toString());
   }
 
   /**
@@ -188,6 +206,86 @@ export class Game {
    */
   setupUpgradeUI() {
     // Will be set up when modal is shown
+  }
+
+  /**
+   * Setup weapon selection UI
+   */
+  setupWeaponSelectionUI() {
+    const weaponIcon = document.getElementById('weaponIcon');
+
+    // Add click handler to weapon icon to open selection modal
+    if (weaponIcon) {
+      weaponIcon.style.cursor = 'pointer';
+      weaponIcon.title = 'Click to change starting weapon';
+      weaponIcon.addEventListener('click', () => {
+        this.showWeaponSelection();
+      });
+    }
+  }
+
+  /**
+   * Show weapon selection modal
+   */
+  showWeaponSelection() {
+    const weaponModal = document.getElementById('weaponModal');
+    const weaponChoices = document.getElementById('weaponChoices');
+    const availableWeapons = this.weaponSystem.getAvailableWeapons();
+    const currentWeaponIndex = this.weaponSystem.startingWeaponIndex;
+
+    // Clear previous choices
+    weaponChoices.innerHTML = '';
+
+    // Create weapon choice cards
+    availableWeapons.forEach((weapon, index) => {
+      const card = document.createElement('div');
+      card.className = 'weapon-card';
+      if (index === currentWeaponIndex) {
+        card.classList.add('selected');
+      }
+
+      card.innerHTML = `
+        <div class="weapon-icon">${weapon.icon}</div>
+        <div class="weapon-info">
+          <div class="weapon-title">${weapon.name}</div>
+          <div class="weapon-desc">${weapon.description}</div>
+        </div>
+        ${index === currentWeaponIndex ? '<div class="current-badge">Current</div>' : ''}
+      `;
+
+      card.addEventListener('click', () => {
+        // Update selection
+        this.weaponSystem.selectWeapon(index);
+        this.saveStartingWeapon(index);
+
+        // Update UI
+        const weaponIconEl = document.getElementById('weaponIcon');
+        const weaponNameEl = document.getElementById('weaponName');
+        if (weaponIconEl) weaponIconEl.textContent = weapon.icon;
+        if (weaponNameEl) weaponNameEl.textContent = weapon.name;
+
+        // Update card selection
+        weaponChoices.querySelectorAll('.weapon-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+
+        // Update badges
+        weaponChoices.querySelectorAll('.current-badge').forEach(b => b.remove());
+        const badge = document.createElement('div');
+        badge.className = 'current-badge';
+        badge.textContent = 'Current';
+        card.appendChild(badge);
+
+        // Close modal after short delay
+        setTimeout(() => {
+          weaponModal.style.display = 'none';
+        }, 500);
+      });
+
+      weaponChoices.appendChild(card);
+    });
+
+    // Show modal
+    weaponModal.style.display = 'flex';
   }
 
   /**
@@ -413,6 +511,7 @@ export class Game {
     this.healthPickups = [];
     this.powerUps = [];
     this.bullets = [];
+    this.volcanoHazards = [];
     this.scoreManager.reset();
     this.xpManager.reset();
     this.upgradeSystem.reset();
@@ -450,18 +549,21 @@ export class Game {
   }
 
   /**
-   * Spawn an enemy (flying, tank, or elite)
+   * Spawn an enemy (flying, medium, tank, or elite)
    */
   spawnEnemy() {
     const rand = Math.random();
-    if (rand < 0.6) {
-      // 60% chance for flying enemy
+    if (rand < 0.45) {
+      // 45% chance for flying enemy
       this.enemies.push(new FlyingEnemy(this.canvas, this.gameSpeed));
-    } else if (rand < 0.85) {
-      // 25% chance for tank enemy
+    } else if (rand < 0.70) {
+      // 25% chance for medium enemy
+      this.enemies.push(new MediumEnemy(this.canvas, this.gameSpeed));
+    } else if (rand < 0.90) {
+      // 20% chance for tank enemy
       this.enemies.push(new TankEnemy(this.canvas, this.gameSpeed));
     } else {
-      // 15% chance for elite enemy (drops 2x coins!)
+      // 10% chance for elite enemy (drops 2x coins!)
       this.enemies.push(new EliteEnemy(this.canvas, this.gameSpeed));
     }
   }
@@ -495,8 +597,12 @@ export class Game {
   /**
    * Spawn coin at position
    */
-  spawnCoin(x, y, value = 1) {
-    this.coins.push(new Coin(x, y, value));
+  /**
+   * Spawn bonus XP gem (replaces old coin system)
+   * Elite enemies drop higher value XP gems (25-30 XP)
+   */
+  spawnBonusXP(x, y, value = 25) {
+    this.xpGems.push(new XPGem(x, y, value));
   }
 
   /**
@@ -529,9 +635,9 @@ export class Game {
     // Auto-fire weapon system
     this.weaponSystem.update(this.dino, this.bullets, effects);
 
-    // Spawn obstacles (trees to jump over) - less frequent, player must jump
-    const spawnInterval = 120 + Math.floor(Math.random() * 80); // Slower: 120-200 frames
-    if (this.frameCount % spawnInterval === 0) {
+    // Spawn obstacles (trees to jump over) - FIXED RATE throughout entire game
+    const obstacleSpawnInterval = 300; // Fixed interval, no randomness
+    if (this.frameCount % obstacleSpawnInterval === 0) {
       this.spawnObstacle();
     }
 
@@ -540,7 +646,7 @@ export class Game {
     let enemySpawnChance = 0;
     let enemySpawnInterval = 200;
 
-    // Progressive difficulty based on level
+    // Progressive difficulty based on level - enemies increase, obstacles stay constant
     if (playerLevel === 1) {
       enemySpawnChance = 0.3; // 30% chance, very few enemies
       enemySpawnInterval = 200; // Every 200 frames
@@ -586,10 +692,11 @@ export class Game {
     this.updatePowerUps(effects);
     this.updateHealthPickups(effects);
     this.updateBullets();
+    this.updateVolcanoHazards();
     this.updateObstacles();
     this.updateEnemies();
     this.updateXPGems(effects);
-    this.updateCoins(effects);
+    // Coins removed - unified XP progression
 
     // Update particle system
     this.particleSystem.update();
@@ -602,9 +709,9 @@ export class Game {
 
     // Increase difficulty gradually with diminishing returns
     // Slower increase at higher speeds to prevent it getting too fast
-    if (this.scoreManager.score % 300 === 0 && this.gameSpeed < this.maxGameSpeed) {
+    if (this.scoreManager.score % 500 === 0 && this.gameSpeed < this.maxGameSpeed) {
       // Calculate increment based on current speed (smaller increments as speed increases)
-      const speedIncrement = this.gameSpeed < 4 ? 0.3 : this.gameSpeed < 6 ? 0.2 : 0.1;
+      const speedIncrement = this.gameSpeed < 4 ? 0.15 : this.gameSpeed < 6 ? 0.1 : 0.05;
       this.gameSpeed = Math.min(this.maxGameSpeed, this.gameSpeed + (speedIncrement * speedModifier));
     }
   }
@@ -634,8 +741,8 @@ export class Game {
         this.assets.blingSound.currentTime = 0;
         this.assets.blingSound.play().catch(e => console.log('Audio play failed:', e));
 
-        // Add coin through manager (handles upgrade logic)
-        this.coinManager.addCoins(1);
+        // Add bonus XP from powerup (replaces old coin system)
+        this.xpManager.addXP(25); // Bonus XP value
       }
 
       // Remove if off-screen or collected
@@ -723,45 +830,9 @@ export class Game {
   }
 
   /**
-   * Update coins
+   * Update coins - REMOVED (unified XP system)
+   * Coins have been converted to bonus XP gems
    */
-  updateCoins(effects) {
-    const magnetRange = effects.magnetRange || 0;
-
-    for (let i = this.coins.length - 1; i >= 0; i--) {
-      const coin = this.coins[i];
-      coin.update(this.dino, magnetRange);
-
-      // Check collision with dino
-      if (coin.checkCollision(this.dino)) {
-        const coinValue = coin.collect();
-
-        // Gold coin particles (extra sparkly for 2x coins)
-        const { x: centerX, y: centerY } = coin.getCenter();
-        this.particleSystem.spawnParticles(
-          centerX,
-          centerY,
-          ParticleSystem.COLORS.COIN_COLLECT,
-          coinValue >= 2 ? 15 : 10
-        );
-
-        // Play bling sound for coins
-        this.assets.blingSound.currentTime = 0;
-        this.assets.blingSound.play().catch(e => console.log('Audio play failed:', e));
-
-        // Add coin through manager (handles upgrade logic)
-        this.coinManager.addCoins(coinValue);
-
-        this.coins.splice(i, 1);
-        continue;
-      }
-
-      // Remove if off-screen
-      if (coin.isOffScreen()) {
-        this.coins.splice(i, 1);
-      }
-    }
-  }
 
   /**
    * Update bullets
@@ -776,8 +847,35 @@ export class Game {
         continue;
       }
 
-      bullet.update();
+      const hitGround = bullet.update();
       let bulletRemoved = false;
+
+      // Check if bomb projectile exploded
+      if (bullet.isVolcanoProjectile && hitGround) {
+        // Spawn volcano hazard at impact location
+        const hazard = new VolcanoHazard(bullet.x, bullet.y + bullet.height);
+        this.volcanoHazards.push(hazard);
+        this.bullets.splice(i, 1);
+        bulletRemoved = true;
+
+        // Big explosion particles when bomb detonates
+        this.particleSystem.spawnParticles(
+          bullet.x + bullet.width / 2,
+          bullet.y + bullet.height / 2,
+          ParticleSystem.COLORS.ENEMY_DEATH,
+          25 // Large explosion
+        );
+        continue;
+      }
+
+      // Volcano projectiles don't damage enemies, only spawn hazards
+      if (bullet.isVolcanoProjectile) {
+        // Remove if off-screen
+        if (bullet.isOffScreen(this.canvas.width)) {
+          this.bullets.splice(i, 1);
+        }
+        continue;
+      }
 
       // Bullets ONLY hit enemies, NOT obstacles (trees are obstacles to jump over)
       // Check collision with enemies only
@@ -788,8 +886,26 @@ export class Game {
           if (bullet instanceof PushBullet) {
             // Apply knockback force to push enemy away
             enemy.applyKnockback(bullet.knockbackForce);
-
             // Visual feedback for push - lighter blue particles
+
+          if (enemyDied) {
+            // Enemy death - big explosion
+            this.particleSystem.spawnParticles(
+              enemy.x + enemy.width / 2,
+              enemy.y + enemy.height / 2,
+              ParticleSystem.COLORS.ENEMY_DEATH,
+              15 // More particles for death
+            );
+            this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
+
+            // Elite enemies drop bonus XP (unified progression)
+            if (enemy.type === 'elite') {
+              this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 25);
+            }
+
+            this.enemies.splice(j, 1);
+            this.screenShake.shake(8, 150); // Bigger shake on kill
+          } else {
             this.particleSystem.spawnParticles(
               bullet.x,
               bullet.y,
@@ -852,7 +968,67 @@ export class Game {
         this.bullets.splice(i, 1);
       }
     }
-  }  /**
+  }
+
+  /**
+   * Update volcano hazards
+   */
+  updateVolcanoHazards() {
+    for (let i = this.volcanoHazards.length - 1; i >= 0; i--) {
+      const hazard = this.volcanoHazards[i];
+
+      if (!hazard.active) {
+        this.volcanoHazards.splice(i, 1);
+        continue;
+      }
+
+      hazard.update();
+
+      // Check collisions with enemies
+      for (let j = this.enemies.length - 1; j >= 0; j--) {
+        const enemy = this.enemies[j];
+
+        if (hazard.canDamage(enemy)) {
+          hazard.markHit(enemy);
+          const enemyDied = enemy.takeDamage(hazard.getDamage());
+
+          if (enemyDied) {
+            // Enemy death - big explosion
+            this.particleSystem.spawnParticles(
+              enemy.x + enemy.width / 2,
+              enemy.y + enemy.height / 2,
+              ParticleSystem.COLORS.ENEMY_DEATH,
+              15
+            );
+            this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
+
+            // Elite enemies drop bonus XP (unified progression)
+            if (enemy.type === 'elite') {
+              this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 25);
+            }
+
+            this.enemies.splice(j, 1);
+            this.screenShake.shake(8, 150);
+          } else {
+            // Enemy hit - small explosion
+            this.particleSystem.spawnParticles(
+              enemy.x + enemy.width / 2,
+              enemy.y + enemy.height / 2,
+              ParticleSystem.COLORS.ENEMY_HIT,
+              8
+            );
+            this.screenShake.shake(3, 75);
+          }
+
+          // Play hit sound
+          this.assets.hitSound.currentTime = 0;
+          this.assets.hitSound.play().catch(e => console.log('Audio play failed:', e));
+        }
+      }
+    }
+  }
+
+  /**
    * Update enemies
    */
   updateEnemies() {
@@ -891,6 +1067,27 @@ export class Game {
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const enemy = this.enemies[i];
       enemy.update();
+
+      // Check if enemy died from burn damage
+      if (enemy.isDead()) {
+        // Enemy death from burn - explosion
+        this.particleSystem.spawnParticles(
+          enemy.x + enemy.width / 2,
+          enemy.y + enemy.height / 2,
+          ParticleSystem.COLORS.ENEMY_DEATH,
+          15
+        );
+        this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
+
+        // Elite enemies drop bonus XP (unified progression)
+        if (enemy.type === 'elite') {
+          this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 25);
+        }
+
+        this.enemies.splice(i, 1);
+        this.screenShake.shake(6, 100);
+        continue;
+      }
 
       // Check collision with dino
       if (checkCollision(this.dino, enemy)) {
@@ -1028,9 +1225,9 @@ export class Game {
     this.obstacles.forEach(obstacle => obstacle.draw(this.ctx));
     this.enemies.forEach(enemy => enemy.draw(this.ctx));
     this.xpGems.forEach(gem => gem.draw(this.ctx));
-    this.coins.forEach(coin => coin.draw(this.ctx));
     this.healthPickups.forEach(pickup => pickup.draw(this.ctx, this.frameCount));
     this.powerUps.forEach(powerUp => powerUp.draw(this.ctx, this.frameCount));
+    this.volcanoHazards.forEach(hazard => hazard.draw(this.ctx));
     this.bullets.forEach(bullet => bullet.draw(this.ctx));
 
     // Draw weapon effects (whip arc, laser beam, etc.)
@@ -1041,13 +1238,7 @@ export class Game {
 
     this.ctx.restore(); // Restore after shake
 
-    // Draw UI elements (not affected by shake)
-    // Draw coin counter
-    const { powerUpCount, threshold } = this.coinManager.getState();
-    this.ctx.fillStyle = '#FFD700';
-    this.ctx.font = 'bold 16px Courier New';
-    this.ctx.textAlign = 'left';
-    this.ctx.fillText('💵 ' + powerUpCount + '/' + threshold, 20, 30);
+    // UI elements drawn separately (not affected by shake)
   }
 
   /**

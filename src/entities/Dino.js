@@ -19,23 +19,16 @@ export class Dino {
 
     // Physics
     this.dy = 0;
-    this.jumpPower = -12;
+    this.jumpPower = -9; // Initial upward velocity - controls jump height
     this.grounded = false;
     this.jumping = false;
-    this.jumpHoldTime = 0;
-    this.maxJumpHoldTime = 15; // frames
-    this.isHoldingJump = false;
 
     // Health system
-    this.maxHealth = 3;
+    this.maxHealth = 7;
     this.health = this.maxHealth;
     this.invulnerable = false;
     this.invulnerabilityTime = 120; // 2 seconds at 60fps
     this.invulnerabilityCounter = 0;
-
-    // Double jump system
-    this.hasDoubleJump = false;
-    this.doubleJumpAvailable = false;
 
     // Animation
     this.animationFrame = 0;
@@ -45,7 +38,8 @@ export class Dino {
 
   draw(ctx) {
     // Draw T-Rex image with animation
-    if (this.trexImg.complete) {
+    // Check both complete and naturalWidth to ensure image loaded successfully
+    if (this.trexImg.complete && this.trexImg.naturalWidth > 0) {
       // If grounded, apply walking animation by slightly offsetting Y position
       // to create a bobbing effect
       let yOffset = 0;
@@ -74,22 +68,12 @@ export class Dino {
 
     // Apply gravity
     if (this.y < this.groundY) {
-      // Variable jump: if not holding jump and moving upward, cut the jump short
-      if (this.jumping && !this.isHoldingJump && this.dy < 0) {
-        // Immediately reduce upward velocity when releasing jump button
-        this.dy += this.gravity * 2; // Much faster falloff
-      } else {
-        // Normal gravity
-        this.dy += this.gravity;
-      }
-
+      this.dy += this.gravity;
       this.grounded = false;
     } else {
       this.y = this.groundY;
       this.grounded = true;
       this.jumping = false;
-      this.jumpHoldTime = 0;
-      this.doubleJumpAvailable = this.hasDoubleJump; // Reset double jump on landing
       if (this.dy > 0) {
         this.dy = 0;
       }
@@ -116,39 +100,15 @@ export class Dino {
   }
 
   jump() {
-    console.log('Jump called! grounded:', this.grounded, 'jumping:', this.jumping, 'doubleJump:', this.doubleJumpAvailable);
-
-    // Regular jump
+    // Simple jump - only when grounded
     if (this.grounded && !this.jumping) {
       this.dy = this.jumpPower;
       this.jumping = true;
-      this.isHoldingJump = true;
-      this.jumpHoldTime = 0;
-      console.log('JUMP! dy set to:', this.dy);
 
       // Play jump sound
       this.jumpSound.currentTime = 0;
       this.jumpSound.play().catch(e => console.log('Audio play failed:', e));
     }
-    // Double jump
-    else if (!this.grounded && this.doubleJumpAvailable) {
-      this.dy = this.jumpPower * 0.9; // Slightly weaker double jump
-      this.doubleJumpAvailable = false;
-      console.log('DOUBLE JUMP! dy set to:', this.dy);
-
-      // Play jump sound
-      this.jumpSound.currentTime = 0;
-      this.jumpSound.play().catch(e => console.log('Audio play failed:', e));
-    } else {
-      console.log('Cannot jump - conditions not met');
-    }
-  }
-
-  /**
-   * Called when jump button is released
-   */
-  releaseJump() {
-    this.isHoldingJump = false;
   }
 
   /**
@@ -187,10 +147,10 @@ export class Dino {
    * Apply upgrade effects to dino
    */
   applyUpgradeEffects(effects) {
-    this.maxHealth = 3 + effects.maxHealthBonus;
+    this.maxHealth = 5 + effects.maxHealthBonus;
     this.health = Math.min(this.health, this.maxHealth);
-    this.jumpPower = -12 * effects.jumpPowerMod;
-    this.hasDoubleJump = effects.doubleJump;
+    // Jump power can be upgraded via effects.jumpPowerMod
+    this.jumpPower = -7 * effects.jumpPowerMod;
   }
 
   reset() {
@@ -199,13 +159,10 @@ export class Dino {
     this.dy = 0;
     this.jumping = false;
     this.grounded = false;
-    this.jumpHoldTime = 0;
-    this.isHoldingJump = false;
     this.animationFrame = 0;
     this.frameCount = 0;
     this.health = this.maxHealth;
     this.invulnerable = false;
     this.invulnerabilityCounter = 0;
-    this.doubleJumpAvailable = false;
   }
 }

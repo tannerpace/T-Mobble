@@ -10,9 +10,11 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    align-self: auto;
     min-height: 100vh;
     background: #f7f7f7;
-    padding: 10px;
+    padding: 0;
+    margin: 0;
     position: relative;
     overflow-x: hidden;
     -webkit-user-select: none;
@@ -29,8 +31,8 @@ body {
 .game-container {
     text-align: center;
     background: white;
-    padding: 15px;
-    border-radius: 10px !important;
+    padding: 5px;
+    border-radius: 0 !important;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     max-width: 100%;
     width: 100%;
@@ -83,6 +85,11 @@ body {
 
 .weapon-icon-display {
     font-size: 24px;
+    transition: transform 0.2s ease;
+}
+
+.weapon-icon-display:hover {
+    transform: scale(1.2);
 }
 
 .weapon-name-display {
@@ -263,6 +270,15 @@ body {
         width: auto;
         max-width: 95vw;
         padding: 20px;
+        border-radius: 10px !important;
+    }
+}
+
+@media (max-width: 879px) {
+    .game-container {
+        padding: 0;
+        border-radius: 0 !important;
+        box-shadow: none;
     }
 }
 
@@ -276,10 +292,20 @@ body {
     display: flex;
     justify-content: flex-end;
     gap: 20px;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
     font-size: 16px;
     color: #535353;
     font-family: 'Courier New', monospace;
+    padding: 5px 10px 0 10px;
+}
+
+@media (max-width: 879px) {
+    .score-container {
+        margin-bottom: 0;
+        padding: 5px;
+        font-size: 14px;
+        gap: 15px;
+    }
 }
 
 .score {
@@ -865,6 +891,37 @@ body {
     font-size: 50px;
     margin-bottom: 15px;
     display: block;
+}
+
+.weapon-info {
+    text-align: center;
+}
+
+.weapon-title {
+    font-size: 22px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.weapon-desc {
+    font-size: 14px;
+    opacity: 0.95;
+    line-height: 1.5;
+    margin-top: 10px;
+}
+
+.current-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(255, 215, 0, 0.9);
+    color: #333;
+    padding: 5px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .weapon-name {
