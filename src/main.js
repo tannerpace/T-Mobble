@@ -17,8 +17,8 @@ function resizeCanvas() {
   const isSmallMobile = window.innerWidth < 400;
 
   // Account for padding and UI elements
-  const horizontalPadding = isMobile ? 20 : 40;
-  const verticalSpace = isMobile ? 250 : 300;
+  const horizontalPadding = isMobile ? 10 : 40;
+  const verticalSpace = isMobile ? 180 : 300; // Reduced from 250 to 180 for mobile
 
   const maxWidth = window.innerWidth - horizontalPadding;
   const maxHeight = window.innerHeight - verticalSpace;

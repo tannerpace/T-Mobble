@@ -33,8 +33,8 @@ export class Game {
     // Game state
     this.gameRunning = false;
     this.gameOver = false;
-    this.gameSpeed = 1.5;
-    this.maxGameSpeed = 8; // Cap maximum speed for playability
+    this.gameSpeed = 1.3;
+    this.maxGameSpeed = 9; // Cap maximum speed for playability
     this.gravity = 0.2; // Controls speed of vertical movement (lower = slower)
     this.frameCount = 0;
     this.animationId = null;

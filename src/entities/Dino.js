@@ -19,7 +19,7 @@ export class Dino {
 
     // Physics
     this.dy = 0;
-    this.jumpPower = -7; // Initial upward velocity - controls jump height
+    this.jumpPower = -9; // Initial upward velocity - controls jump height
     this.grounded = false;
     this.jumping = false;
 

@@ -12,7 +12,7 @@ export class SpawnManager {
    * Check if should spawn obstacle
    */
   shouldSpawnObstacle() {
-    const spawnInterval = 120 + Math.floor(Math.random() * 80); // 120-200 frames
+    const spawnInterval = 200 + Math.floor(Math.random() * 150); // 200-350 frames (much less frequent)
     return this.gameState.frameCount % spawnInterval === 0;
   }
 
@@ -20,7 +20,7 @@ export class SpawnManager {
    * Spawn an obstacle
    */
   spawnObstacle(Obstacle, palmImg) {
-    const minDistance = 250;
+    const minDistance = 400; // Increased spacing between obstacles
     const lastObstacle = this.entities.obstacles[this.entities.obstacles.length - 1];
 
     if (!lastObstacle || this.canvas.width - lastObstacle.x > minDistance) {

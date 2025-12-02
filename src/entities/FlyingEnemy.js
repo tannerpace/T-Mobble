@@ -15,7 +15,13 @@ export class FlyingEnemy extends BaseEnemy {
     });
 
     // Override Y position for flying height - upper third of canvas (15-45% from top)
-    this.y = canvas.height * 0.15 + Math.random() * (canvas.height * 0.3);
+    this.baseY = canvas.height * 0.15 + Math.random() * (canvas.height * 0.3);
+    this.y = this.baseY;
+
+    // Sine wave motion parameters
+    this.waveAmplitude = 30 + Math.random() * 20; // Vertical oscillation range (30-50 pixels)
+    this.waveFrequency = 0.03 + Math.random() * 0.02; // Speed of oscillation (randomized)
+    this.waveOffset = Math.random() * Math.PI * 2; // Random starting phase
 
     // Animation
     this.wingFrame = 0;
@@ -32,6 +38,9 @@ export class FlyingEnemy extends BaseEnemy {
 
   update() {
     super.update();
+
+    // Apply sine wave motion for up-and-down flight
+    this.y = this.baseY + Math.sin(this.frameCount * this.waveFrequency + this.waveOffset) * this.waveAmplitude;
 
     // Wing flap animation
     if (this.frameCount % 15 === 0) {
