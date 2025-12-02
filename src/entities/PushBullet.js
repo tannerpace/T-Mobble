@@ -5,7 +5,8 @@ export class PushBullet {
   constructor(x, y, angle = 0, speed = 10, knockbackForce = 30) {
     this.x = x;
     this.y = y;
-    this.startX = x; // Track starting position for range
+    this.startX = x; // Track starting position for range calculation
+    this.startY = y; // Track starting Y position for angled shots
     this.width = 15;
     this.height = 8;
     this.angle = angle; // Angle in degrees
@@ -13,7 +14,9 @@ export class PushBullet {
     this.knockbackForce = knockbackForce; // How far to push enemies
     this.active = true;
     this.maxRange = 400; // Longer range than damage bullets
-    this.hitEnemies = new Set(); // Track which enemies we've already hit
+    // Track hit enemies to avoid hitting the same enemy multiple times
+    // This Set's lifecycle is tied to the bullet instance (limited by maxRange/lifespan)
+    this.hitEnemies = new Set();
 
     // Calculate velocity based on angle
     const radians = (angle * Math.PI) / 180;
@@ -77,11 +80,15 @@ export class PushBullet {
   }
 
   isOffScreen(canvasWidth) {
-    // Check if bullet exceeded max range
-    const distanceTraveled = this.x - this.startX;
+    // Calculate actual distance traveled using Euclidean distance (works for angled shots)
+    const dx = this.x - this.startX;
+    const dy = this.y - this.startY;
+    const distanceTraveled = Math.sqrt(dx * dx + dy * dy);
+    
     if (distanceTraveled > this.maxRange) {
       return true;
     }
-    return this.x > canvasWidth;
+    // Check if bullet is outside visible area
+    return this.x > canvasWidth || this.x < -this.width || this.y < -this.height || this.y > 600;
   }
 }

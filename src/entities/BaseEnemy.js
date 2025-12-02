@@ -62,7 +62,14 @@ export class BaseEnemy extends BaseEntity {
    * @param {number} force - Knockback distance
    */
   applyKnockback(force) {
-    this.x += force; // Push enemy to the right (away from player)
+    // Apply knockback while staying within canvas bounds
+    const newX = this.x + force;
+    // Ensure enemy doesn't get pushed beyond the right edge of canvas
+    if (newX < this.canvas.width) {
+      this.x = newX;
+    } else {
+      this.x = this.canvas.width - this.width; // Keep enemy just at the edge
+    }
   }
 
   /**
