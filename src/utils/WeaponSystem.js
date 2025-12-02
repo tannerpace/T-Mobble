@@ -3,6 +3,7 @@
  */
 import { BulletWeapon } from '../weapons/BulletWeapon.js';
 import { LaserWeapon } from '../weapons/LaserWeapon.js';
+import { PushWeapon } from '../weapons/PushWeapon.js';
 import { WhipWeapon } from '../weapons/WhipWeapon.js';
 
 export class WeaponSystem {
@@ -14,7 +15,8 @@ export class WeaponSystem {
     this.allWeaponTypes = [
       new BulletWeapon(assets),
       new WhipWeapon(assets),
-      new LaserWeapon(assets)
+      new LaserWeapon(assets),
+      new PushWeapon(assets)
     ];
 
     // Active weapons (starts with blaster)
@@ -56,7 +58,8 @@ export class WeaponSystem {
     const weaponMap = {
       'blaster': new BulletWeapon(this.assets),
       'whip': new WhipWeapon(this.assets),
-      'laser': new LaserWeapon(this.assets)
+      'laser': new LaserWeapon(this.assets),
+      'push': new PushWeapon(this.assets)
       // More weapons can be added here as they're implemented
     };
 
@@ -79,7 +82,8 @@ export class WeaponSystem {
     const weaponMap = {
       'blaster': 'Blaster',
       'whip': 'Whip',
-      'laser': 'Laser Beam'
+      'laser': 'Laser Beam',
+      'push': 'Push Gun'
     };
 
     const weaponName = weaponMap[weaponId];

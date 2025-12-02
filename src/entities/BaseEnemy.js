@@ -58,6 +58,14 @@ export class BaseEnemy extends BaseEntity {
   }
 
   /**
+   * Apply knockback force to push enemy away
+   * @param {number} force - Knockback distance
+   */
+  applyKnockback(force) {
+    this.x += force; // Push enemy to the right (away from player)
+  }
+
+  /**
    * Update enemy position
    */
   update() {

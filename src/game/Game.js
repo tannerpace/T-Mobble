@@ -10,6 +10,7 @@ import { FlyingEnemy } from '../entities/FlyingEnemy.js';
 import { HealthPickup } from '../entities/HealthPickup.js';
 import { Obstacle } from '../entities/Obstacle.js';
 import { PowerUp } from '../entities/PowerUp.js';
+import { PushBullet } from '../entities/PushBullet.js';
 import { TankEnemy } from '../entities/TankEnemy.js';
 import { XPGem } from '../entities/XPGem.js';
 import { CoinUpgradeManager } from '../utils/CoinUpgradeManager.js';
@@ -783,44 +784,65 @@ export class Game {
       for (let j = this.enemies.length - 1; j >= 0; j--) {
         const enemy = this.enemies[j];
         if (bullet.checkCollision(enemy)) {
-          const enemyDied = enemy.takeDamage(1);
+          // Check if this is a PushBullet (knockback) or regular Bullet (damage)
+          if (bullet instanceof PushBullet) {
+            // Apply knockback force to push enemy away
+            enemy.applyKnockback(bullet.knockbackForce);
 
-          if (enemyDied) {
-            // Enemy death - big explosion
-            this.particleSystem.spawnParticles(
-              enemy.x + enemy.width / 2,
-              enemy.y + enemy.height / 2,
-              ParticleSystem.COLORS.ENEMY_DEATH,
-              15 // More particles for death
-            );
-            this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
-
-            // Spawn coin for elite enemies
-            if (enemy.type === 'elite' && enemy.getCoinDrop) {
-              this.spawnCoin(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.getCoinDrop());
-            }
-
-            this.enemies.splice(j, 1);
-            this.screenShake.shake(8, 150); // Bigger shake on kill
-          } else {
-            // Enemy hit - small explosion
+            // Visual feedback for push - lighter blue particles
             this.particleSystem.spawnParticles(
               bullet.x,
               bullet.y,
-              ParticleSystem.COLORS.ENEMY_HIT,
-              8
+              '#00BFFF', // Blue for push effect
+              6
             );
-            this.screenShake.shake(3, 75); // Small shake on hit
-          }
+            
+            // Light shake for push feedback
+            this.screenShake.shake(2, 50);
 
-          // Play hit sound
-          this.assets.hitSound.currentTime = 0;
-          this.assets.hitSound.play().catch(e => console.log('Audio play failed:', e));
+            // PushBullet doesn't deactivate immediately - it can push multiple enemies
+            // It only deactivates when reaching max range or going off screen
+          } else {
+            // Regular damage bullet
+            const enemyDied = enemy.takeDamage(1);
 
-          if (!bullet.active) {
-            this.bullets.splice(i, 1);
-            bulletRemoved = true;
-            break;
+            if (enemyDied) {
+              // Enemy death - big explosion
+              this.particleSystem.spawnParticles(
+                enemy.x + enemy.width / 2,
+                enemy.y + enemy.height / 2,
+                ParticleSystem.COLORS.ENEMY_DEATH,
+                15 // More particles for death
+              );
+              this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
+
+              // Spawn coin for elite enemies
+              if (enemy.type === 'elite' && enemy.getCoinDrop) {
+                this.spawnCoin(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.getCoinDrop());
+              }
+
+              this.enemies.splice(j, 1);
+              this.screenShake.shake(8, 150); // Bigger shake on kill
+            } else {
+              // Enemy hit - small explosion
+              this.particleSystem.spawnParticles(
+                bullet.x,
+                bullet.y,
+                ParticleSystem.COLORS.ENEMY_HIT,
+                8
+              );
+              this.screenShake.shake(3, 75); // Small shake on hit
+            }
+
+            // Play hit sound
+            this.assets.hitSound.currentTime = 0;
+            this.assets.hitSound.play().catch(e => console.log('Audio play failed:', e));
+
+            if (!bullet.active) {
+              this.bullets.splice(i, 1);
+              bulletRemoved = true;
+              break;
+            }
           }
         }
       }
