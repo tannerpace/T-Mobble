@@ -1,19 +1,19 @@
 /**
  * Main entry point for the game
  */
-import { Game } from './game/Game.js';
-import { AssetManager } from './utils/AssetManager.js';
-import { debounce } from './utils/helpers.js';
+import { Game } from './game/Game';
+import { AssetManager } from './utils/AssetManager';
+import { debounce } from './utils/helpers';
 
 // Get canvas element
-const canvas = document.getElementById('gameCanvas');
+const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
 
 // Aspect ratio options based on screen
 const WIDE_ASPECT = 3.5;  // Wider for desktop
 const MOBILE_ASPECT = 3;  // Slightly taller for mobile
 
 // Handle responsive canvas sizing - fills more screen
-function resizeCanvas() {
+function resizeCanvas(): void {
   const isMobile = window.innerWidth < 768;
   const isLandscape = window.innerWidth > window.innerHeight;
   const isTouchDevice = 'ontouchstart' in window;
@@ -24,7 +24,8 @@ function resizeCanvas() {
   const viewportWidth = window.innerWidth;
 
   // Calculate available space (accounting for UI elements)
-  let topPadding, bottomPadding;
+  let topPadding: number;
+  let bottomPadding: number;
 
   if (isMobileLandscape) {
     // Landscape mobile - minimize UI space, button floats over canvas
@@ -44,7 +45,7 @@ function resizeCanvas() {
   const availableWidth = viewportWidth - 10; // Minimal horizontal padding
 
   // Choose aspect ratio - wider in landscape for more play area
-  let aspectRatio;
+  let aspectRatio: number;
   if (isMobileLandscape) {
     aspectRatio = 4; // Wide for landscape
   } else if (isMobile) {
@@ -54,7 +55,8 @@ function resizeCanvas() {
   }
 
   // Calculate optimal dimensions to fill available space
-  let canvasWidth, canvasHeight;
+  let canvasWidth: number;
+  let canvasHeight: number;
 
   // Try fitting by width first
   canvasWidth = availableWidth;
@@ -131,4 +133,3 @@ const game = new Game(canvas, assets);
 game.scoreManager.setLeaderboardApi('https://t-mobble-leaderboard.tannerpace.workers.dev');
 
 game.start();
-
