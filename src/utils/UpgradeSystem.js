@@ -35,6 +35,14 @@ export class UpgradeSystem {
         icon: '⚡',
         weaponType: 'laser',
         maxLevel: 5
+      },
+      {
+        id: 'push',
+        name: 'Push Gun',
+        description: 'Knockback weapon that pushes enemies',
+        icon: '💨',
+        weaponType: 'push',
+        maxLevel: 5
       }
     ];
   }
@@ -67,6 +75,14 @@ export class UpgradeSystem {
         'Length +40% - Longer range',
         'Dual Laser - Fire two beams',
         'Piercing Laser - Unlimited pierce'
+      ],
+      push: [
+        'Unlock Push Gun - Pushes enemies back',
+        'Knockback +33% - Stronger push force',
+        'Range +25% - Push from further away',
+        'Knockback +67% - Even stronger push',
+        'Range +50% - Maximum push range',
+        'Ultimate Push - Maximum force and range'
       ]
     };
 
