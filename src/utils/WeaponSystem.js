@@ -4,6 +4,7 @@
 import { BulletWeapon } from '../weapons/BulletWeapon.js';
 import { FlameThrowerWeapon } from '../weapons/FlameThrowerWeapon.js';
 import { LaserWeapon } from '../weapons/LaserWeapon.js';
+import { ShotgunWeapon } from '../weapons/ShotgunWeapon.js';
 import { VolcanoWeapon } from '../weapons/VolcanoWeapon.js';
 import { WaterCannonWeapon } from '../weapons/WaterCannonWeapon.js';
 import { WhipWeapon } from '../weapons/WhipWeapon.js';
@@ -20,7 +21,8 @@ export class WeaponSystem {
       new LaserWeapon(assets),
       new FlameThrowerWeapon(assets),
       new VolcanoWeapon(assets),
-      new WaterCannonWeapon(assets)
+      new WaterCannonWeapon(assets),
+      new ShotgunWeapon(assets)
     ];
 
     // Active weapons (starts with blaster)
@@ -65,7 +67,8 @@ export class WeaponSystem {
       'laser': new LaserWeapon(this.assets),
       'flamethrower': new FlameThrowerWeapon(this.assets),
       'volcano': new VolcanoWeapon(this.assets),
-      'watercannon': new WaterCannonWeapon(this.assets)
+      'watercannon': new WaterCannonWeapon(this.assets),
+      'shotgun': new ShotgunWeapon(this.assets)
       // More weapons can be added here as they're implemented
     };
 
@@ -91,7 +94,8 @@ export class WeaponSystem {
       'laser': 'Laser Beam',
       'flamethrower': 'Flame Thrower',
       'volcano': 'Volcano Launcher',
-      'watercannon': 'Water Cannon'
+      'watercannon': 'Water Cannon',
+      'shotgun': 'Shotgun'
     };
 
     const weaponName = weaponMap[weaponId];
