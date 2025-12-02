@@ -35,7 +35,7 @@ export class Game {
     this.gameOver = false;
     this.gameSpeed = 1.5;
     this.maxGameSpeed = 8; // Cap maximum speed for playability
-    this.gravity = 0.35; // Further reduced for slower, smoother jump
+    this.gravity = 0.2; // Controls speed of vertical movement (lower = slower)
     this.frameCount = 0;
     this.animationId = null;
     this.isSubmitting = false;
