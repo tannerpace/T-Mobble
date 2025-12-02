@@ -8,6 +8,7 @@ import { Dino } from '../entities/Dino.js';
 import { EliteEnemy } from '../entities/EliteEnemy.js';
 import { FlyingEnemy } from '../entities/FlyingEnemy.js';
 import { FrogEnemy } from '../entities/FrogEnemy.js';
+import { GhostEnemy } from '../entities/GhostEnemy.js';
 import { HealthPickup } from '../entities/HealthPickup.js';
 import { LowFlyingEnemy } from '../entities/LowFlyingEnemy.js';
 import { MediumEnemy } from '../entities/MediumEnemy.js';
@@ -115,23 +116,26 @@ export class Game {
     const isMajorMilestone = level % 10 === 0;
 
     // Create spectacular particle burst for level up
-    const particleCount = isMajorMilestone ? 30 : isMilestone ? 20 : 15;
     const centerX = this.canvas.width / 2;
     const centerY = this.canvas.height / 3;
 
-    // Spawn celebration particles
-    this.particleSystem.spawnParticles(
-      centerX,
-      centerY,
-      ParticleSystem.COLORS.LEVEL_UP,
-      particleCount
-    );
+    // Spawn confetti celebration!
+    const confettiCount = isMajorMilestone ? 50 : isMilestone ? 35 : 25;
+    this.particleSystem.spawnConfetti(centerX, centerY, confettiCount);
+
+    // Additional confetti from sides for major milestones
+    if (isMajorMilestone) {
+      this.particleSystem.spawnConfetti(50, centerY + 50, 20);
+      this.particleSystem.spawnConfetti(this.canvas.width - 50, centerY + 50, 20);
+    }
 
     // Add screen shake for major milestones
     if (isMajorMilestone) {
-      this.screenShake.shake(8, 300);
+      this.screenShake.shake(10, 400);
     } else if (isMilestone) {
-      this.screenShake.shake(5, 200);
+      this.screenShake.shake(6, 250);
+    } else {
+      this.screenShake.shake(4, 150);
     }
 
     // Create notification element
@@ -467,17 +471,20 @@ export class Game {
     } else if (rand < 0.58) {
       // 10% chance for charger enemy (fast ground threat)
       this.enemies.push(new ChargerEnemy(this.canvas, this.gameSpeed));
-    } else if (rand < 0.72) {
-      // 14% chance for medium enemy
+    } else if (rand < 0.66) {
+      // 8% chance for ghost enemy (phasing threat)
+      this.enemies.push(new GhostEnemy(this.canvas, this.gameSpeed));
+    } else if (rand < 0.78) {
+      // 12% chance for medium enemy
       this.enemies.push(new MediumEnemy(this.canvas, this.gameSpeed));
-    } else if (rand < 0.84) {
-      // 12% chance for tank enemy
+    } else if (rand < 0.88) {
+      // 10% chance for tank enemy
       this.enemies.push(new TankEnemy(this.canvas, this.gameSpeed));
-    } else if (rand < 0.95) {
-      // 11% chance for elite enemy
+    } else if (rand < 0.96) {
+      // 8% chance for elite enemy
       this.enemies.push(new EliteEnemy(this.canvas, this.gameSpeed));
     } else {
-      // 5% chance for super elite enemy (highest rewards!)
+      // 4% chance for super elite enemy (highest rewards!)
       this.enemies.push(new SuperEliteEnemy(this.canvas, this.gameSpeed));
     }
   }
@@ -664,13 +671,22 @@ export class Game {
       if (powerUp.checkCollision(this.dino)) {
         powerUp.collected = true;
 
-        // Gold coin particles
+        // Satisfying gold coin burst!
         const { x: centerX, y: centerY } = powerUp.getCenter();
-        this.particleSystem.spawnParticles(
+        this.particleSystem.spawnExplosion(
           centerX,
           centerY,
           ParticleSystem.COLORS.COIN_COLLECT,
-          10
+          0.8
+        );
+
+        // Show bonus XP popup
+        this.particleSystem.spawnTextPopup(
+          centerX,
+          centerY - 15,
+          '+25 XP',
+          [255, 215, 0],
+          16
         );
 
         // Play bling sound for coins
@@ -744,15 +760,27 @@ export class Game {
       if (gem.checkCollision(this.dino)) {
         const xpValue = gem.collect();
         const xpMultiplier = effects.xpMultiplier || 1;
-        this.xpManager.addXP(Math.floor(xpValue * xpMultiplier));
+        const totalXP = Math.floor(xpValue * xpMultiplier);
+        this.xpManager.addXP(totalXP);
 
-        // Cyan/blue XP particles
+        // Satisfying XP collection burst
         this.particleSystem.spawnParticles(
           gem.x,
           gem.y,
           ParticleSystem.COLORS.XP_COLLECT,
-          8
+          12
         );
+
+        // Show floating XP text for larger gems
+        if (xpValue >= 10) {
+          this.particleSystem.spawnTextPopup(
+            gem.x,
+            gem.y - 10,
+            `+${totalXP}`,
+            [0, 255, 255],
+            xpValue >= 25 ? 18 : 14
+          );
+        }
 
         this.xpGems.splice(i, 1);
         continue;
@@ -821,18 +849,35 @@ export class Game {
           const enemyDied = enemy.takeDamage(1);
 
           if (enemyDied) {
-            // Enemy death - big explosion
-            this.particleSystem.spawnParticles(
+            // Track combo for multiplied effects
+            const combo = this.particleSystem.registerKill();
+            const intensity = this.particleSystem.getComboMultiplier();
+
+            // Enemy death - satisfying explosion!
+            const colors = enemy.type === 'ghost'
+              ? ParticleSystem.COLORS.GHOST_DEATH
+              : ParticleSystem.COLORS.ENEMY_DEATH;
+            this.particleSystem.spawnExplosion(
               enemy.x + enemy.width / 2,
               enemy.y + enemy.height / 2,
-              ParticleSystem.COLORS.ENEMY_DEATH,
-              15 // More particles for death
+              colors,
+              intensity
             );
+
+            // Show XP popup
+            this.particleSystem.spawnTextPopup(
+              enemy.x + enemy.width / 2,
+              enemy.y,
+              `+${enemy.xpValue} XP`,
+              [100, 255, 255],
+              14
+            );
+
             this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
             this.spawnBonusXPForEnemy(enemy);
 
             this.enemies.splice(j, 1);
-            this.screenShake.shake(8, 150); // Bigger shake on kill
+            this.screenShake.shake(8 * intensity, 150); // Bigger shake on kill
           } else {
             // Enemy hit - small explosion
             this.particleSystem.spawnParticles(
@@ -886,13 +931,27 @@ export class Game {
           const enemyDied = enemy.takeDamage(hazard.getDamage());
 
           if (enemyDied) {
-            // Enemy death - big explosion
-            this.particleSystem.spawnParticles(
+            // Track combo
+            const combo = this.particleSystem.registerKill();
+            const intensity = this.particleSystem.getComboMultiplier();
+
+            // Enemy death - fiery explosion
+            this.particleSystem.spawnExplosion(
               enemy.x + enemy.width / 2,
               enemy.y + enemy.height / 2,
               ParticleSystem.COLORS.ENEMY_DEATH,
-              15
+              intensity
             );
+
+            // Show XP popup
+            this.particleSystem.spawnTextPopup(
+              enemy.x + enemy.width / 2,
+              enemy.y,
+              `+${enemy.xpValue} XP`,
+              [100, 255, 255],
+              14
+            );
+
             this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
             this.spawnBonusXPForEnemy(enemy);
 
@@ -926,15 +985,32 @@ export class Game {
       const enemyDied = enemy.takeDamage(1);
 
       if (enemyDied) {
-        // Enemy death - big explosion
-        this.particleSystem.spawnParticles(
+        // Track combo for multiplied effects
+        const combo = this.particleSystem.registerKill();
+        const intensity = this.particleSystem.getComboMultiplier();
+
+        // Enemy death - satisfying explosion!
+        const colors = enemy.type === 'ghost'
+          ? ParticleSystem.COLORS.GHOST_DEATH
+          : ParticleSystem.COLORS.ENEMY_DEATH;
+        this.particleSystem.spawnExplosion(
           enemy.x + enemy.width / 2,
           enemy.y + enemy.height / 2,
-          ParticleSystem.COLORS.ENEMY_DEATH,
-          15
+          colors,
+          intensity
         );
+
+        // Show XP popup
+        this.particleSystem.spawnTextPopup(
+          enemy.x + enemy.width / 2,
+          enemy.y,
+          `+${enemy.xpValue} XP`,
+          [100, 255, 255],
+          14
+        );
+
         this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
-        this.screenShake.shake(8, 150); // Bigger shake on kill
+        this.screenShake.shake(8 * intensity, 150); // Bigger shake on kill
       } else {
         // Enemy hit - small explosion
         this.particleSystem.spawnParticles(
@@ -959,13 +1035,30 @@ export class Game {
 
       // Check if enemy died from burn damage
       if (enemy.isDead()) {
-        // Enemy death from burn - explosion
-        this.particleSystem.spawnParticles(
+        // Track combo
+        const combo = this.particleSystem.registerKill();
+        const intensity = this.particleSystem.getComboMultiplier();
+
+        // Enemy death from burn - fiery explosion
+        const colors = enemy.type === 'ghost'
+          ? ParticleSystem.COLORS.GHOST_DEATH
+          : ParticleSystem.COLORS.ENEMY_DEATH;
+        this.particleSystem.spawnExplosion(
           enemy.x + enemy.width / 2,
           enemy.y + enemy.height / 2,
-          ParticleSystem.COLORS.ENEMY_DEATH,
-          15
+          colors,
+          intensity
         );
+
+        // Show XP popup
+        this.particleSystem.spawnTextPopup(
+          enemy.x + enemy.width / 2,
+          enemy.y,
+          `+${enemy.xpValue} XP`,
+          [100, 255, 255],
+          14
+        );
+
         this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
         this.spawnBonusXPForEnemy(enemy);
 
@@ -974,8 +1067,9 @@ export class Game {
         continue;
       }
 
-      // Check collision with dino
-      if (checkCollision(this.dino, enemy)) {
+      // Check collision with dino (ghosts only damage when solid)
+      const canDamage = enemy.canDamagePlayer ? enemy.canDamagePlayer() : true;
+      if (canDamage && checkCollision(this.dino, enemy)) {
         const damageTaken = this.dino.takeDamage();
         if (damageTaken) {
           // Player damage - bright red/white explosion
