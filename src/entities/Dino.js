@@ -112,6 +112,16 @@ export class Dino {
   }
 
   /**
+   * Release jump for variable jump height
+   */
+  releaseJump() {
+    // If jumping upward, reduce velocity for shorter jump
+    if (this.jumping && this.dy < 0) {
+      this.dy *= 0.5;
+    }
+  }
+
+  /**
    * Take damage
    * @returns {boolean} True if damage was taken, false if invulnerable or dead
    */

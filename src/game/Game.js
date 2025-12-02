@@ -310,7 +310,9 @@ export class Game {
 
     if (!modal || !choicesContainer) return;
 
-    const choices = this.upgradeSystem.getUpgradeChoices(3);
+    // Use configured upgrade choice count (can be overridden via URL)
+    const choiceCount = window.GAME_CONFIG?.upgradeChoiceCount || 3;
+    const choices = this.upgradeSystem.getUpgradeChoices(choiceCount);
     choicesContainer.innerHTML = '';
 
     // Update modal title
@@ -324,7 +326,9 @@ export class Game {
       card.className = 'upgrade-card';
 
       let levelInfo = '';
-      if (weapon.isNewWeapon) {
+      if (weapon.isHealthRefill) {
+        levelInfo = '<div class="upgrade-level">INSTANT</div>';
+      } else if (weapon.isNewWeapon) {
         levelInfo = '<div class="upgrade-level">NEW!</div>';
       } else {
         levelInfo = `<div class="upgrade-level">Level ${weapon.currentLevel} → ${weapon.nextLevel}</div>`;
@@ -351,15 +355,24 @@ export class Game {
    * Select an upgrade (add or level up weapon)
    */
   selectUpgrade(weaponId) {
-    const wasUnlocked = this.upgradeSystem.isWeaponUnlocked(weaponId);
-
-    this.upgradeSystem.applyUpgrade(weaponId);
-
-    // Add new weapon or update existing weapon level
-    if (!wasUnlocked) {
-      this.weaponSystem.addWeapon(weaponId);
+    // Handle health refill
+    if (weaponId === 'healthRefill') {
+      this.dino.maxHealth++; // Add 1 max health slot
+      this.dino.heal(this.dino.maxHealth); // Fully heal
+      this.updateHealthDisplay();
     } else {
-      this.weaponSystem.levelUpWeapon(weaponId, this.upgradeSystem.getWeaponLevel(weaponId));
+      // Check if weapon was unlocked BEFORE applying upgrade
+      const wasUnlocked = this.upgradeSystem.isWeaponUnlocked(weaponId);
+
+      // Apply the upgrade
+      this.upgradeSystem.applyUpgrade(weaponId);
+
+      // Add new weapon or update existing weapon level
+      if (!wasUnlocked) {
+        this.weaponSystem.addWeapon(weaponId);
+      } else {
+        this.weaponSystem.levelUpWeapon(weaponId, this.upgradeSystem.getWeaponLevel(weaponId));
+      }
     }
 
     this.xpManager.consumeLevelUp();

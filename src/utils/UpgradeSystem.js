@@ -51,6 +51,14 @@ export class UpgradeSystem {
         icon: '🌋',
         weaponType: 'volcano',
         maxLevel: 5
+      },
+      {
+        id: 'watercannon',
+        name: 'Water Cannon',
+        description: 'Pressurized water bursts with knockback',
+        icon: '💦',
+        weaponType: 'watercannon',
+        maxLevel: 5
       }
     ];
   }
@@ -99,6 +107,14 @@ export class UpgradeSystem {
         'Fire Rate +25% - Even faster launches',
         'Hazard Damage +50% - More damage per tick',
         'Fire Rate +35% - Maximum launch speed'
+      ],
+      watercannon: [
+        'Unlock Water Cannon - Pressurized water with knockback',
+        'Range +50 - Water travels further',
+        'Splash +8 - Larger splash radius',
+        'Fire Rate +20% - Shoot faster',
+        'Damage +35% - Stronger water pressure',
+        'Knockback +20 - Maximum knockback force'
       ]
     };
 
@@ -144,6 +160,17 @@ export class UpgradeSystem {
       }
     });
 
+    // Add health refill option with 40% chance
+    if (Math.random() < 0.4) {
+      available.push({
+        id: 'healthRefill',
+        name: 'Health Refill',
+        description: 'Restore all health + gain 1 max health',
+        icon: '💚',
+        isHealthRefill: true
+      });
+    }
+
     // Shuffle and return requested count
     const shuffled = available.sort(() => Math.random() - 0.5);
     return shuffled.slice(0, Math.min(count, shuffled.length));
@@ -154,6 +181,11 @@ export class UpgradeSystem {
    * @param {string} weaponId - ID of weapon to upgrade
    */
   applyUpgrade(weaponId) {
+    // Skip health refill (handled in Game.js)
+    if (weaponId === 'healthRefill') {
+      return;
+    }
+
     const currentLevel = this.weaponLevels.get(weaponId) || 0;
 
     if (!this.unlockedWeapons.has(weaponId)) {

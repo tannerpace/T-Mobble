@@ -50,5 +50,30 @@ const ENV_CONFIG = {
   }
 };
 
+// Game configuration for playtesting and balancing
+const GAME_CONFIG = {
+  // Number of upgrade choices to show on level up (default: 3)
+  // Can be overridden with URL parameter: ?upgradeChoices=5
+  upgradeChoiceCount: 3,
+
+  // Initialize from URL parameters
+  init: function () {
+    const urlParams = new URLSearchParams(window.location.search);
+
+    // Override upgrade choice count from URL
+    const upgradeChoices = urlParams.get('upgradeChoices');
+    if (upgradeChoices) {
+      const count = parseInt(upgradeChoices, 10);
+      if (!isNaN(count) && count > 0 && count <= 10) {
+        this.upgradeChoiceCount = count;
+        console.log(`🎮 Playtest Mode: Showing ${count} upgrade choices`);
+      }
+    }
+
+    return this;
+  }
+}.init();
+
 // Make available globally
 window.ENV_CONFIG = ENV_CONFIG;
+window.GAME_CONFIG = GAME_CONFIG;
