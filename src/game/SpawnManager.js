@@ -57,17 +57,19 @@ export class SpawnManager {
   }
 
   /**
-   * Spawn an enemy (flying, medium, tank, elite, or super elite)
+   * Spawn an enemy (flying, low-flying, medium, tank, elite, or super elite)
    */
-  spawnEnemy(FlyingEnemy, MediumEnemy, TankEnemy, EliteEnemy, SuperEliteEnemy) {
+  spawnEnemy(FlyingEnemy, LowFlyingEnemy, MediumEnemy, TankEnemy, EliteEnemy, SuperEliteEnemy) {
     const rand = Math.random();
-    if (rand < 0.45) {
+    if (rand < 0.30) {
       this.entities.addEnemy(new FlyingEnemy(this.canvas, this.gameState.gameSpeed));
-    } else if (rand < 0.70) {
+    } else if (rand < 0.45) {
+      this.entities.addEnemy(new LowFlyingEnemy(this.canvas, this.gameState.gameSpeed));
+    } else if (rand < 0.65) {
       this.entities.addEnemy(new MediumEnemy(this.canvas, this.gameState.gameSpeed));
-    } else if (rand < 0.87) {
+    } else if (rand < 0.82) {
       this.entities.addEnemy(new TankEnemy(this.canvas, this.gameState.gameSpeed));
-    } else if (rand < 0.97) {
+    } else if (rand < 0.95) {
       this.entities.addEnemy(new EliteEnemy(this.canvas, this.gameState.gameSpeed));
     } else {
       this.entities.addEnemy(new SuperEliteEnemy(this.canvas, this.gameState.gameSpeed));

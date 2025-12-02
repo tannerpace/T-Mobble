@@ -2,12 +2,14 @@
  * Main Game class - orchestrates all game logic
  */
 import { Bullet } from '../entities/Bullet.js';
+import { ChargerEnemy } from '../entities/ChargerEnemy.js';
 import { Cloud } from '../entities/Cloud.js';
 import { Dino } from '../entities/Dino.js';
 import { EliteEnemy } from '../entities/EliteEnemy.js';
 import { FlyingEnemy } from '../entities/FlyingEnemy.js';
 import { FrogEnemy } from '../entities/FrogEnemy.js';
 import { HealthPickup } from '../entities/HealthPickup.js';
+import { LowFlyingEnemy } from '../entities/LowFlyingEnemy.js';
 import { MediumEnemy } from '../entities/MediumEnemy.js';
 import { Obstacle } from '../entities/Obstacle.js';
 import { PowerUp } from '../entities/PowerUp.js';
@@ -563,27 +565,33 @@ export class Game {
   }
 
   /**
-   * Spawn an enemy (flying, frog, medium, tank, elite, or super elite)
+   * Spawn an enemy (flying, low-flying, frog, charger, medium, tank, elite, or super elite)
    */
   spawnEnemy() {
     const rand = Math.random();
-    if (rand < 0.35) {
-      // 35% chance for flying enemy
+    if (rand < 0.22) {
+      // 22% chance for high flying enemy
       this.enemies.push(new FlyingEnemy(this.canvas, this.gameSpeed));
-    } else if (rand < 0.55) {
-      // 20% chance for frog enemy (weak hopper)
+    } else if (rand < 0.35) {
+      // 13% chance for low flying enemy (jump-height threat)
+      this.enemies.push(new LowFlyingEnemy(this.canvas, this.gameSpeed));
+    } else if (rand < 0.48) {
+      // 13% chance for frog enemy (weak hopper)
       this.enemies.push(new FrogEnemy(this.canvas, this.gameSpeed));
-    } else if (rand < 0.75) {
-      // 20% chance for medium enemy
+    } else if (rand < 0.58) {
+      // 10% chance for charger enemy (fast ground threat)
+      this.enemies.push(new ChargerEnemy(this.canvas, this.gameSpeed));
+    } else if (rand < 0.72) {
+      // 14% chance for medium enemy
       this.enemies.push(new MediumEnemy(this.canvas, this.gameSpeed));
-    } else if (rand < 0.87) {
-      // 17% chance for tank enemy
+    } else if (rand < 0.84) {
+      // 12% chance for tank enemy
       this.enemies.push(new TankEnemy(this.canvas, this.gameSpeed));
-    } else if (rand < 0.97) {
-      // 10% chance for elite enemy
+    } else if (rand < 0.95) {
+      // 11% chance for elite enemy
       this.enemies.push(new EliteEnemy(this.canvas, this.gameSpeed));
     } else {
-      // 3% chance for super elite enemy (highest rewards!)
+      // 5% chance for super elite enemy (highest rewards!)
       this.enemies.push(new SuperEliteEnemy(this.canvas, this.gameSpeed));
     }
   }
