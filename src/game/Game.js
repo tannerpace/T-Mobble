@@ -598,6 +598,25 @@ export class Game {
   }
 
   /**
+   * Spawn bonus XP based on enemy type
+   */
+  spawnBonusXPForEnemy(enemy) {
+    const centerX = enemy.x + enemy.width / 2;
+    const centerY = enemy.y + enemy.height / 2;
+
+    // Elite enemies drop bonus XP (unified progression)
+    if (enemy.type === 'elite') {
+      this.spawnXPGem(centerX, centerY, 25);
+    }
+
+    // Super Elite enemies drop even more bonus XP
+    if (enemy.type === 'superelite') {
+      this.spawnXPGem(centerX, centerY, 50);
+      this.spawnXPGem(centerX + 10, centerY, 50);
+    }
+  }
+
+  /**
    * Spawn coin at position
    */
   /**
@@ -896,17 +915,7 @@ export class Game {
               15 // More particles for death
             );
             this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
-
-            // Elite enemies drop bonus XP (unified progression)
-            if (enemy.type === 'elite') {
-              this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 25);
-            }
-
-            // Super Elite enemies drop even more bonus XP
-            if (enemy.type === 'superelite') {
-              this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 50);
-              this.spawnXPGem(enemy.x + enemy.width / 2 + 10, enemy.y + enemy.height / 2, 50);
-            }
+            this.spawnBonusXPForEnemy(enemy);
 
             this.enemies.splice(j, 1);
             this.screenShake.shake(8, 150); // Bigger shake on kill
@@ -971,17 +980,7 @@ export class Game {
               15
             );
             this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
-
-            // Elite enemies drop bonus XP (unified progression)
-            if (enemy.type === 'elite') {
-              this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 25);
-            }
-
-            // Super Elite enemies drop even more bonus XP
-            if (enemy.type === 'superelite') {
-              this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 50);
-              this.spawnXPGem(enemy.x + enemy.width / 2 + 10, enemy.y + enemy.height / 2, 50);
-            }
+            this.spawnBonusXPForEnemy(enemy);
 
             this.enemies.splice(j, 1);
             this.screenShake.shake(8, 150);
@@ -1054,17 +1053,7 @@ export class Game {
           15
         );
         this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
-
-        // Elite enemies drop bonus XP (unified progression)
-        if (enemy.type === 'elite') {
-          this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 25);
-        }
-
-        // Super Elite enemies drop even more bonus XP
-        if (enemy.type === 'superelite') {
-          this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 50);
-          this.spawnXPGem(enemy.x + enemy.width / 2 + 10, enemy.y + enemy.height / 2, 50);
-        }
+        this.spawnBonusXPForEnemy(enemy);
 
         this.enemies.splice(i, 1);
         this.screenShake.shake(6, 100);
