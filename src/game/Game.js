@@ -634,9 +634,9 @@ export class Game {
     // Auto-fire weapon system
     this.weaponSystem.update(this.dino, this.bullets, effects);
 
-    // Spawn obstacles (trees to jump over) - less frequent, player must jump
-    const spawnInterval = 120 + Math.floor(Math.random() * 80); // Slower: 120-200 frames
-    if (this.frameCount % spawnInterval === 0) {
+    // Spawn obstacles (trees to jump over) - FIXED RATE throughout entire game
+    const obstacleSpawnInterval = 300; // Fixed interval, no randomness
+    if (this.frameCount % obstacleSpawnInterval === 0) {
       this.spawnObstacle();
     }
 
@@ -645,7 +645,7 @@ export class Game {
     let enemySpawnChance = 0;
     let enemySpawnInterval = 200;
 
-    // Progressive difficulty based on level
+    // Progressive difficulty based on level - enemies increase, obstacles stay constant
     if (playerLevel === 1) {
       enemySpawnChance = 0.3; // 30% chance, very few enemies
       enemySpawnInterval = 200; // Every 200 frames
@@ -708,9 +708,9 @@ export class Game {
 
     // Increase difficulty gradually with diminishing returns
     // Slower increase at higher speeds to prevent it getting too fast
-    if (this.scoreManager.score % 300 === 0 && this.gameSpeed < this.maxGameSpeed) {
+    if (this.scoreManager.score % 500 === 0 && this.gameSpeed < this.maxGameSpeed) {
       // Calculate increment based on current speed (smaller increments as speed increases)
-      const speedIncrement = this.gameSpeed < 4 ? 0.3 : this.gameSpeed < 6 ? 0.2 : 0.1;
+      const speedIncrement = this.gameSpeed < 4 ? 0.15 : this.gameSpeed < 6 ? 0.1 : 0.05;
       this.gameSpeed = Math.min(this.maxGameSpeed, this.gameSpeed + (speedIncrement * speedModifier));
     }
   }
