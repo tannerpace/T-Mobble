@@ -67,6 +67,14 @@ export class UpgradeSystem {
         icon: '🔫',
         weaponType: 'shotgun',
         maxLevel: 5
+      },
+      {
+        id: 'orbital',
+        name: 'Orbital',
+        description: 'Auto-targeting orbs that orbit you',
+        icon: '🔮',
+        weaponType: 'orbital',
+        maxLevel: 5
       }
     ];
   }
@@ -131,6 +139,14 @@ export class UpgradeSystem {
         'Range +50 - Pellets travel further',
         'Pellets +2 - Even more pellets',
         'Devastator - Maximum spread damage'
+      ],
+      orbital: [
+        'Unlock Orbital - Auto-targeting orbs orbit you',
+        'Orbs +1 - Gain an additional orb',
+        'Range +20% - Orbs seek enemies further',
+        'Orbs +1 - Even more orbs',
+        'Speed +30% - Orbs attack faster',
+        'Max Orbit - 6 orbs with maximum range'
       ]
     };
 

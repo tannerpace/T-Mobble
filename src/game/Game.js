@@ -8,6 +8,7 @@ import { Dino } from '../entities/Dino.js';
 import { EliteEnemy } from '../entities/EliteEnemy.js';
 import { FlyingEnemy } from '../entities/FlyingEnemy.js';
 import { FrogEnemy } from '../entities/FrogEnemy.js';
+import { GhostEnemy } from '../entities/GhostEnemy.js';
 import { HealthPickup } from '../entities/HealthPickup.js';
 import { LowFlyingEnemy } from '../entities/LowFlyingEnemy.js';
 import { MediumEnemy } from '../entities/MediumEnemy.js';
@@ -467,17 +468,20 @@ export class Game {
     } else if (rand < 0.58) {
       // 10% chance for charger enemy (fast ground threat)
       this.enemies.push(new ChargerEnemy(this.canvas, this.gameSpeed));
-    } else if (rand < 0.72) {
-      // 14% chance for medium enemy
+    } else if (rand < 0.66) {
+      // 8% chance for ghost enemy (phasing threat)
+      this.enemies.push(new GhostEnemy(this.canvas, this.gameSpeed));
+    } else if (rand < 0.78) {
+      // 12% chance for medium enemy
       this.enemies.push(new MediumEnemy(this.canvas, this.gameSpeed));
-    } else if (rand < 0.84) {
-      // 12% chance for tank enemy
+    } else if (rand < 0.88) {
+      // 10% chance for tank enemy
       this.enemies.push(new TankEnemy(this.canvas, this.gameSpeed));
-    } else if (rand < 0.95) {
-      // 11% chance for elite enemy
+    } else if (rand < 0.96) {
+      // 8% chance for elite enemy
       this.enemies.push(new EliteEnemy(this.canvas, this.gameSpeed));
     } else {
-      // 5% chance for super elite enemy (highest rewards!)
+      // 4% chance for super elite enemy (highest rewards!)
       this.enemies.push(new SuperEliteEnemy(this.canvas, this.gameSpeed));
     }
   }
@@ -974,8 +978,9 @@ export class Game {
         continue;
       }
 
-      // Check collision with dino
-      if (checkCollision(this.dino, enemy)) {
+      // Check collision with dino (ghosts only damage when solid)
+      const canDamage = enemy.canDamagePlayer ? enemy.canDamagePlayer() : true;
+      if (canDamage && checkCollision(this.dino, enemy)) {
         const damageTaken = this.dino.takeDamage();
         if (damageTaken) {
           // Player damage - bright red/white explosion
