@@ -129,7 +129,7 @@ export class BaseEnemy extends BaseEntity {
   drawEmoji(ctx, emoji, fontSize = 30) {
     ctx.font = `${fontSize}px Arial`;
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    ctx.textBaseline = 'alphabetic'; // Use alphabetic baseline for better ground alignment
 
     // Damage flash effect
     if (this.damageFlash > 0) {
@@ -137,8 +137,9 @@ export class BaseEnemy extends BaseEntity {
       ctx.shadowBlur = 10;
     }
 
-    const { x: centerX, y: centerY } = this.getCenter();
-    ctx.fillText(emoji, centerX, centerY);
+    const { x: centerX } = this.getCenter();
+    // Draw slightly lower to account for emoji glyph positioning
+    ctx.fillText(emoji, centerX, this.y + this.height + (fontSize * 0.1));
 
     ctx.shadowBlur = 0;
   }

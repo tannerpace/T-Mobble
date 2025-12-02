@@ -13,9 +13,13 @@ import { PowerUp } from '../entities/PowerUp.js';
 import { TankEnemy } from '../entities/TankEnemy.js';
 import { XPGem } from '../entities/XPGem.js';
 import { CoinUpgradeManager } from '../utils/CoinUpgradeManager.js';
+import { DifficultyScaling } from '../utils/DifficultyScaling.js';
 import { ExperienceManager } from '../utils/ExperienceManager.js';
+import { MetaProgression } from '../utils/MetaProgression.js';
 import { ParticleSystem, ScreenShake } from '../utils/ParticleSystem.js';
+import { RunModifiers } from '../utils/RunModifiers.js';
 import { ScoreManager } from '../utils/ScoreManager.js';
+import { SynergySystem } from '../utils/SynergySystem.js';
 import { UpgradeSystem } from '../utils/UpgradeSystem.js';
 import { WeaponSystem } from '../utils/WeaponSystem.js';
 import { checkCollision } from '../utils/collision.js';
@@ -41,6 +45,19 @@ export class Game {
     this.isPaused = false;
     this.regenerationCounter = 0;
 
+    // Difficulty scaling configuration
+    this.difficultyConfig = {
+      baseSpawnInterval: 200,
+      minSpawnInterval: 30,
+      baseSpawnChance: 0.3,
+      baseEliteChance: 0.10,
+      maxEliteChance: 0.30
+    };
+
+    // Enemy tracking for statistics
+    this.enemiesKilled = 0;
+    this.runStartTime = Date.now();
+
     // Game systems
     this.renderer = new Renderer(canvas, this.ctx);
     this.scoreManager = new ScoreManager();
@@ -49,6 +66,10 @@ export class Game {
     this.weaponSystem = new WeaponSystem(assets);
     this.particleSystem = new ParticleSystem();
     this.screenShake = new ScreenShake();
+    this.difficultyScaling = new DifficultyScaling();
+    this.synergySystem = new SynergySystem();
+    this.metaProgression = new MetaProgression();
+    this.runModifiers = new RunModifiers();
 
     // Coin upgrade manager
     this.coinManager = new CoinUpgradeManager({
@@ -212,7 +233,15 @@ export class Game {
 
     if (!modal || !choicesContainer) return;
 
-    const choices = this.upgradeSystem.getUpgradeChoices(3);
+    // Get player state for smart upgrade selection
+    const playerState = {
+      level: this.xpManager.level,
+      health: this.dino.health,
+      weaponCount: this.upgradeSystem.unlockedWeapons.size,
+      synergySystem: this.synergySystem
+    };
+
+    const choices = this.upgradeSystem.getUpgradeChoices(3, this.xpManager.level, playerState);
     choicesContainer.innerHTML = '';
 
     // Update modal title
@@ -221,48 +250,85 @@ export class Game {
       modalContent.textContent = '⬆️ Level Up! Choose an Upgrade';
     }
 
-    choices.forEach(weapon => {
+    choices.forEach(upgrade => {
       const card = document.createElement('div');
       card.className = 'upgrade-card';
 
       let levelInfo = '';
-      if (weapon.isNewWeapon) {
+      if (upgrade.isNew) {
         levelInfo = '<div class="upgrade-level">NEW!</div>';
       } else {
-        levelInfo = `<div class="upgrade-level">Level ${weapon.currentLevel} → ${weapon.nextLevel}</div>`;
+        levelInfo = `<div class="upgrade-level">Level ${upgrade.currentLevel} → ${upgrade.nextLevel}</div>`;
+      }
+
+      // Show tradeoff for ultimates
+      let tradeoffInfo = '';
+      if (upgrade.tradeoff) {
+        tradeoffInfo = `<div class="upgrade-tradeoff">⚠️ ${upgrade.tradeoff}</div>`;
       }
 
       card.innerHTML = `
-        <div class="upgrade-icon">${weapon.icon}</div>
-        <div class="upgrade-name">${weapon.name}</div>
+        <div class="upgrade-icon">${upgrade.icon}</div>
+        <div class="upgrade-name">${upgrade.name}</div>
         ${levelInfo}
-        <div class="upgrade-description">${weapon.description}</div>
+        <div class="upgrade-description">${upgrade.description}</div>
+        ${tradeoffInfo}
       `;
 
       card.addEventListener('click', () => {
-        this.selectUpgrade(weapon.id);
+        this.selectUpgrade(upgrade.id);
       });
 
       choicesContainer.appendChild(card);
     });
 
+    // Check for synergy hints
+    const hints = this.synergySystem.getSynergyHints(this.upgradeSystem.getAllUpgrades());
+    if (hints.length > 0) {
+      const hintElement = document.createElement('div');
+      hintElement.className = 'synergy-hint';
+      hintElement.innerHTML = `🔓 Hint: ${hints[0].remaining.upgrade} Lv${hints[0].remaining.level} unlocks ${hints[0].name}!`;
+      choicesContainer.appendChild(hintElement);
+    }
+
     modal.style.display = 'flex';
   }
 
   /**
-   * Select an upgrade (add or level up weapon)
+   * Select an upgrade (add or level up weapon/passive)
    */
-  selectUpgrade(weaponId) {
-    const wasUnlocked = this.upgradeSystem.isWeaponUnlocked(weaponId);
+  selectUpgrade(upgradeId) {
+    const wasUnlocked = this.upgradeSystem.isWeaponUnlocked(upgradeId);
+    const success = this.upgradeSystem.applyUpgrade(upgradeId);
 
-    this.upgradeSystem.applyUpgrade(weaponId);
-
-    // Add new weapon or update existing weapon level
-    if (!wasUnlocked) {
-      this.weaponSystem.addWeapon(weaponId);
-    } else {
-      this.weaponSystem.levelUpWeapon(weaponId, this.upgradeSystem.getWeaponLevel(weaponId));
+    if (!success) {
+      console.error('Failed to apply upgrade:', upgradeId);
+      return;
     }
+
+    // Check if it's a weapon upgrade
+    const isWeapon = ['blaster', 'whip', 'laser'].includes(upgradeId);
+
+    if (isWeapon) {
+      // Add new weapon or update existing weapon level
+      if (!wasUnlocked) {
+        this.weaponSystem.addWeapon(upgradeId);
+      } else {
+        this.weaponSystem.levelUpWeapon(upgradeId, this.upgradeSystem.getWeaponLevel(upgradeId));
+      }
+    }
+
+    // Check for newly unlocked synergies
+    const newSynergies = this.synergySystem.checkForNewSynergies(this.upgradeSystem.getAllUpgrades());
+    if (newSynergies.length > 0) {
+      newSynergies.forEach(synergy => {
+        this.showSynergyUnlock(synergy);
+      });
+    }
+
+    // Apply upgrade effects to dino
+    const effects = this.upgradeSystem.calculateEffects();
+    this.dino.applyUpgradeEffects(effects);
 
     this.xpManager.consumeLevelUp();
 
@@ -282,6 +348,32 @@ export class Game {
     } else {
       this.unpauseGame();
     }
+  }
+
+  /**
+   * Show synergy unlock notification
+   */
+  showSynergyUnlock(synergy) {
+    const notification = document.createElement('div');
+    notification.className = 'synergy-unlock-notification';
+    notification.innerHTML = `
+      <div class="synergy-unlock-title">✨ SYNERGY UNLOCKED ✨</div>
+      <div class="synergy-unlock-icon">${synergy.icon}</div>
+      <div class="synergy-unlock-name">${synergy.name}</div>
+      <div class="synergy-unlock-desc">${synergy.description}</div>
+    `;
+    document.body.appendChild(notification);
+
+    // Play special sound
+    try {
+      this.assets.yeehawSound.currentTime = 0;
+      this.assets.yeehawSound.volume = 0.7;
+      this.assets.yeehawSound.play().catch(() => { });
+    } catch (e) { }
+
+    setTimeout(() => {
+      notification.remove();
+    }, 3000);
   }
 
   /**
@@ -416,13 +508,30 @@ export class Game {
     this.xpManager.reset();
     this.upgradeSystem.reset();
     this.weaponSystem.reset();
+    this.synergySystem.reset();
     this.coinManager.reset();
     this.gameSpeed = 2;
     this.frameCount = 0;
     this.gameOver = false;
     this.isPaused = false;
     this.regenerationCounter = 0;
+    this.enemiesKilled = 0;
+    this.runStartTime = Date.now();
     this.dino.reset();
+
+    // Apply meta progression effects
+    const metaEffects = this.metaProgression.getActiveEffects();
+    if (metaEffects.startingLevel > 1) {
+      // Start at higher level
+      for (let i = 1; i < metaEffects.startingLevel; i++) {
+        this.xpManager.levelUp();
+      }
+    }
+    if (metaEffects.startingHP > 0) {
+      this.dino.maxHealth += metaEffects.startingHP;
+      this.dino.health = this.dino.maxHealth;
+    }
+
     this.updateScoreDisplay();
     this.updateHealthDisplay();
     this.updateXPDisplay();
@@ -452,7 +561,9 @@ export class Game {
    * Spawn an enemy (flying, tank, or elite)
    */
   spawnEnemy() {
+    const currentScore = this.scoreManager.score;
     const rand = Math.random();
+
     if (rand < 0.6) {
       // 60% chance for flying enemy
       this.enemies.push(new FlyingEnemy(this.canvas, this.gameSpeed));
@@ -460,18 +571,21 @@ export class Game {
       // 25% chance for tank enemy
       this.enemies.push(new TankEnemy(this.canvas, this.gameSpeed));
     } else {
-      // 15% chance for elite enemy (drops 2x coins!)
-      this.enemies.push(new EliteEnemy(this.canvas, this.gameSpeed));
+      // 15% chance for elite enemy - only spawn if score >= 500
+      if (currentScore >= 500) {
+        this.enemies.push(new EliteEnemy(this.canvas, this.gameSpeed));
+      } else {
+        // Spawn tank instead if score too low
+        this.enemies.push(new TankEnemy(this.canvas, this.gameSpeed));
+      }
     }
   }
 
   /**
-   * Spawn a power-up
+   * Spawn a power-up (guaranteed spawn, typically from tank enemy drops)
    */
   spawnPowerUp() {
-    if (Math.random() < 0.3) {
-      this.powerUps.push(new PowerUp(this.canvas, this.gameSpeed));
-    }
+    this.powerUps.push(new PowerUp(this.canvas, this.gameSpeed));
   }
 
   /**
@@ -534,36 +648,23 @@ export class Game {
       this.spawnObstacle();
     }
 
-    // Spawn enemies (flying and tanks) - progressively more as player levels up
+    // Spawn enemies with dynamic scaling formula
     const playerLevel = this.xpManager.level;
-    let enemySpawnChance = 0;
-    let enemySpawnInterval = 200;
 
-    // Progressive difficulty based on level
-    if (playerLevel === 1) {
-      enemySpawnChance = 0.3; // 30% chance, very few enemies
-      enemySpawnInterval = 200; // Every 200 frames
-    } else if (playerLevel === 2) {
-      enemySpawnChance = 0.5; // 50% chance
-      enemySpawnInterval = 150;
-    } else if (playerLevel >= 3 && playerLevel <= 5) {
-      enemySpawnChance = 0.7; // 70% chance
-      enemySpawnInterval = 120;
-    } else if (playerLevel >= 6 && playerLevel <= 8) {
-      enemySpawnChance = 0.85; // 85% chance
-      enemySpawnInterval = 100;
-    } else {
-      enemySpawnChance = 1.0; // 100% chance, maximum difficulty
-      enemySpawnInterval = 80;
-    }
+    // Calculate spawn interval using exponential decay
+    const enemySpawnInterval = Math.max(
+      this.difficultyConfig.minSpawnInterval,
+      Math.floor(this.difficultyConfig.baseSpawnInterval * Math.pow(0.85, Math.floor(playerLevel / 2)))
+    );
+
+    // Calculate spawn chance with linear increase
+    const enemySpawnChance = Math.min(
+      1.0,
+      this.difficultyConfig.baseSpawnChance + (playerLevel * 0.07)
+    );
 
     if (this.frameCount % enemySpawnInterval === 0 && Math.random() < enemySpawnChance) {
       this.spawnEnemy();
-    }
-
-    // Spawn power-ups (coins for weapon upgrades)
-    if (this.frameCount % 250 === 0 && Math.random() < 0.6) {
-      this.spawnPowerUp();
     }
 
     // Spawn health pickups (rare, only when damaged)
@@ -702,6 +803,13 @@ export class Game {
         const xpMultiplier = effects.xpMultiplier || 1;
         this.xpManager.addXP(Math.floor(xpValue * xpMultiplier));
 
+        // Play jewl sound
+        const jewlSound = this.assets.jewlSound;
+        if (jewlSound) {
+          jewlSound.currentTime = 0;
+          jewlSound.play().catch(e => console.log('Audio play failed:', e));
+        }
+
         // Cyan/blue XP particles
         this.particleSystem.spawnParticles(
           gem.x,
@@ -795,12 +903,19 @@ export class Game {
             );
             this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
 
-            // Spawn coin for elite enemies
-            if (enemy.type === 'elite' && enemy.getCoinDrop) {
-              this.spawnCoin(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.getCoinDrop());
+            // Spawn PowerUp coin for tank enemies
+            if (enemy.type === 'tank') {
+              this.spawnPowerUp();
+            }
+
+            // Spawn 2x PowerUp coins for elite enemies (tougher = better reward)
+            if (enemy.type === 'elite') {
+              this.spawnPowerUp();
+              this.spawnPowerUp();
             }
 
             this.enemies.splice(j, 1);
+            this.enemiesKilled++; // Track kills for statistics
             this.screenShake.shake(8, 150); // Bigger shake on kill
           } else {
             // Enemy hit - small explosion
@@ -847,7 +962,19 @@ export class Game {
           15
         );
         this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
+        this.enemiesKilled++; // Track kills for statistics
         this.screenShake.shake(8, 150); // Bigger shake on kill
+
+        // Spawn PowerUp coin for tank enemies
+        if (enemy.type === 'tank') {
+          this.spawnPowerUp();
+        }
+
+        // Spawn 2x PowerUp coins for elite enemies (tougher = better reward)
+        if (enemy.type === 'elite') {
+          this.spawnPowerUp();
+          this.spawnPowerUp();
+        }
       } else {
         // Enemy hit - small explosion
         this.particleSystem.spawnParticles(
@@ -893,8 +1020,17 @@ export class Game {
             this.handleGameOver();
           }
         }
+        // If invulnerable, no damage/effects but still show bounce particles
+        else {
+          this.particleSystem.spawnParticles(
+            enemy.x + enemy.width / 2,
+            enemy.y + enemy.height / 2,
+            ParticleSystem.COLORS.XP_COLLECT,
+            5
+          );
+        }
 
-        // Remove enemy after hit
+        // Always remove enemy after collision (whether damage taken or not)
         this.enemies.splice(i, 1);
         continue;
       }
@@ -929,7 +1065,18 @@ export class Game {
           if (this.dino.isDead()) {
             this.handleGameOver();
           }
-        }        // Remove obstacle after hit
+        }
+        // If invulnerable, no damage/effects but still show bounce particles
+        else {
+          this.particleSystem.spawnParticles(
+            obstacle.x + obstacle.width / 2,
+            obstacle.y + obstacle.height / 2,
+            ParticleSystem.COLORS.XP_COLLECT,
+            5
+          );
+        }
+
+        // Always remove obstacle after collision (whether damage taken or not)
         this.obstacles.splice(i, 1);
         continue;
       }
@@ -956,11 +1103,53 @@ export class Game {
     this.scoreManager.updateHighScore();
     this.updateScoreDisplay();
 
+    // Calculate run statistics
+    const runStats = {
+      finalLevel: this.xpManager.level,
+      score: this.scoreManager.getCurrentScore(),
+      totalXP: this.xpManager.getTotalXPForLevel(this.xpManager.level),
+      synergiesUnlocked: Array.from(this.synergySystem.unlockedSynergies),
+      runTime: this.getRunTime()
+    };
+
+    // Update meta progression
+    const rewards = this.metaProgression.onRunComplete(runStats);
+
+    // Show meta progression rewards
+    if (rewards.milestone) {
+      this.showMilestoneReward(rewards.milestone);
+    }
+
     // Check if score qualifies for global leaderboard before prompting
     const currentScore = this.scoreManager.getCurrentScore();
     if (currentScore > 0) {
       setTimeout(() => this.checkAndPromptLeaderboard(), 500);
     }
+  }
+
+  /**
+   * Get run time in seconds
+   */
+  getRunTime() {
+    return Math.floor((Date.now() - this.runStartTime) / 1000);
+  }
+
+  /**
+   * Show milestone reward notification
+   */
+  showMilestoneReward(milestone) {
+    const notification = document.createElement('div');
+    notification.className = 'milestone-notification';
+    notification.innerHTML = `
+      <div class="milestone-title">🎉 MILESTONE REACHED 🎉</div>
+      <div class="milestone-reward">${milestone.reward}</div>
+      <div class="milestone-coins">+${milestone.coins} coins!</div>
+    `;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.remove();
+    }, 4000);
   }
 
   /**
@@ -1026,6 +1215,9 @@ export class Game {
     this.ctx.font = 'bold 16px Courier New';
     this.ctx.textAlign = 'left';
     this.ctx.fillText('💵 ' + powerUpCount + '/' + threshold, 20, 30);
+
+    // Draw active upgrade status indicators
+    this.renderer.drawUpgradeStatus(this.upgradeSystem);
   }
 
   /**

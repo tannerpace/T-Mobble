@@ -62,6 +62,7 @@ export class AssetManager {
     this.loadSound('pew', 'assets/audio/pew.m4a', 0.4);
     this.loadSound('laserbuz', 'assets/audio/laserbuz.m4a', 0.3);
     this.loadSound('whip', 'assets/audio/whip.m4a', 0.4);
+    this.loadSound('jewl', 'assets/audio/jewl.m4a', 0.5);
 
     return {
       trexImg: this.getImage('trex'),
@@ -76,7 +77,8 @@ export class AssetManager {
       yeehawSound: this.getSound('yeehaw'),
       pewSound: this.getSound('pew'),
       laserbuzSound: this.getSound('laserbuz'),
-      whipSound: this.getSound('whip')
+      whipSound: this.getSound('whip'),
+      jewlSound: this.getSound('jewl')
     };
   }
 }

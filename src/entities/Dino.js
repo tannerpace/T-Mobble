@@ -41,9 +41,99 @@ export class Dino {
     this.animationFrame = 0;
     this.animationSpeed = 5; // Change animation every 5 frames
     this.frameCount = 0;
+
+    // Upgrade visual effects
+    this.upgradeEffects = {
+      toughSkin: 0,
+      evasion: 0,
+      jumpHeight: 0,
+      magnet: 0,
+      damageMultiplier: 1.0
+    };
   }
 
   draw(ctx) {
+    const centerX = this.x + this.width / 2;
+    const centerY = this.y + this.height / 2;
+
+    // Draw upgrade effects BEFORE the dino (so they appear behind)
+
+    // Shield aura for Tough Skin (blue glow that pulses and grows)
+    if (this.upgradeEffects.toughSkin > 0) {
+      const shieldSize = 5 + (this.upgradeEffects.toughSkin * 8);
+      const pulse = Math.sin(Date.now() / 300) * 3;
+      ctx.save();
+      ctx.globalAlpha = 0.3 + (this.upgradeEffects.toughSkin * 0.1);
+      ctx.strokeStyle = '#4444FF';
+      ctx.lineWidth = 2 + this.upgradeEffects.toughSkin;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, this.width / 2 + shieldSize + pulse, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Inner glow
+      ctx.fillStyle = '#4444FF';
+      ctx.globalAlpha = 0.1;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Jump boost particles (upward sparks when jumping)
+    if (this.upgradeEffects.jumpHeight > 0 && !this.grounded) {
+      const particleCount = this.upgradeEffects.jumpHeight * 2;
+      ctx.save();
+      for (let i = 0; i < particleCount; i++) {
+        ctx.globalAlpha = 0.4 - (Math.random() * 0.2);
+        ctx.fillStyle = '#FFD700';
+        const offsetX = (Math.random() - 0.5) * this.width;
+        const offsetY = Math.random() * 10;
+        ctx.fillRect(centerX + offsetX, this.y + this.height + offsetY, 3, 3);
+      }
+      ctx.restore();
+    }
+
+    // Dodge/Evasion shimmer (green afterimage)
+    if (this.upgradeEffects.evasion > 0) {
+      const shimmer = Math.sin(Date.now() / 200) * 2;
+      ctx.save();
+      ctx.globalAlpha = 0.15 * this.upgradeEffects.evasion;
+      ctx.fillStyle = '#00FF00';
+      ctx.fillRect(this.x + shimmer, this.y, this.width, this.height);
+      ctx.fillRect(this.x - shimmer, this.y, this.width, this.height);
+      ctx.restore();
+    }
+
+    // Magnet field (purple rotating particles)
+    if (this.upgradeEffects.magnet > 0) {
+      const magnetRange = this.upgradeEffects.magnet * 50;
+      const particleCount = this.upgradeEffects.magnet * 3;
+      ctx.save();
+      ctx.globalAlpha = 0.4;
+      ctx.fillStyle = '#FF00FF';
+
+      for (let i = 0; i < particleCount; i++) {
+        const angle = (Date.now() / 1000 + (i * Math.PI * 2 / particleCount)) % (Math.PI * 2);
+        const px = centerX + Math.cos(angle) * (magnetRange / 2);
+        const py = centerY + Math.sin(angle) * (magnetRange / 2);
+        ctx.beginPath();
+        ctx.arc(px, py, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // Damage boost aura (red glow for high damage multiplier)
+    if (this.upgradeEffects.damageMultiplier > 1.5) {
+      const intensity = Math.min((this.upgradeEffects.damageMultiplier - 1) / 2, 1);
+      const pulse = Math.sin(Date.now() / 150) * 5;
+      ctx.save();
+      ctx.globalAlpha = 0.2 * intensity;
+      ctx.shadowColor = '#FF0000';
+      ctx.shadowBlur = 15 + pulse;
+      ctx.fillStyle = '#FF0000';
+      ctx.fillRect(this.x - 5, this.y - 5, this.width + 10, this.height + 10);
+      ctx.restore();
+    }
+
     // Draw T-Rex image with animation
     if (this.trexImg.complete) {
       // If grounded, apply walking animation by slightly offsetting Y position
@@ -189,8 +279,24 @@ export class Dino {
   applyUpgradeEffects(effects) {
     this.maxHealth = 3 + effects.maxHealthBonus;
     this.health = Math.min(this.health, this.maxHealth);
-    this.jumpPower = -12 * effects.jumpPowerMod;
+
+    // Apply jump height bonus
+    const jumpBonusMult = 1 + (effects.jumpBonus || 0);
+    this.jumpPower = -12 * jumpBonusMult * (effects.jumpPowerMod || 1);
+
     this.hasDoubleJump = effects.doubleJump;
+
+    // Apply invulnerability time bonus from Tough Skin
+    this.invulnerabilityTime = 120 + (effects.invulnTimeBonus || 0); // Base 2s + bonus
+
+    // Store upgrade levels for visual effects
+    this.upgradeEffects = {
+      toughSkin: effects.toughSkinLevel || 0,
+      evasion: effects.evasionLevel || 0,
+      jumpHeight: effects.jumpHeightLevel || 0,
+      magnet: effects.magnetLevel || 0,
+      damageMultiplier: effects.damageMultiplier || 1.0
+    };
   }
 
   reset() {

@@ -30,7 +30,7 @@ export class EliteEnemy extends BaseEnemy {
       emoji = '😈'; // Devil when moderately damaged
     }
 
-    this.drawEmoji(ctx, emoji, 55);
+    this.drawEmoji(ctx, emoji, this.height);
 
     // Elite-styled health bar with border
     this.drawHealthBar(ctx, {
