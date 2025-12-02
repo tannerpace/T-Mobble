@@ -10,11 +10,14 @@ export class VolcanoProjectile {
     this.startY = y;
     this.vx = velocityX;
     this.vy = velocityY;
-    this.width = 12;
-    this.height = 12;
+    this.width = 16;
+    this.height = 16;
     this.active = true;
-    this.gravity = 0.4; // Gravity for arc
+    this.gravity = 0.3; // Lower gravity for higher arc
     this.groundY = 480; // Ground level (adjust based on your game)
+    this.hitGround = false;
+    this.explosionDelay = 20; // Frames before explosion
+    this.explosionTimer = 0;
   }
 
   draw(ctx) {
@@ -22,23 +25,38 @@ export class VolcanoProjectile {
 
     ctx.save();
 
-    // Draw the projectile as a glowing ember/rock
-    ctx.fillStyle = '#FF6600';
-    ctx.beginPath();
-    ctx.arc(this.x + this.width / 2, this.y + this.height / 2, 6, 0, Math.PI * 2);
-    ctx.fill();
+    // Draw bomb emoji
+    ctx.font = '24px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
 
-    // Inner glow
-    ctx.fillStyle = '#FFAA00';
-    ctx.beginPath();
-    ctx.arc(this.x + this.width / 2, this.y + this.height / 2, 3, 0, Math.PI * 2);
-    ctx.fill();
+    // Pulsing effect when on ground
+    if (this.hitGround) {
+      const pulse = 1 + Math.sin(this.explosionTimer * 0.5) * 0.2;
+      ctx.save();
+      ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+      ctx.scale(pulse, pulse);
+      ctx.fillText('💣', 0, 0);
+      ctx.restore();
+    } else {
+      ctx.fillText('💣', this.x + this.width / 2, this.y + this.height / 2);
+    }
 
     ctx.restore();
   }
 
   update() {
-    if (!this.active) return;
+    if (!this.active) return false;
+
+    if (this.hitGround) {
+      // Bomb on ground, counting down to explosion
+      this.explosionTimer++;
+      if (this.explosionTimer >= this.explosionDelay) {
+        this.active = false;
+        return true; // Signal explosion
+      }
+      return false;
+    }
 
     // Apply gravity to create arc
     this.vy += this.gravity;
@@ -49,8 +67,10 @@ export class VolcanoProjectile {
 
     // Check if hit ground
     if (this.y >= this.groundY - this.height) {
-      this.active = false;
-      return true; // Signal that it hit the ground
+      this.y = this.groundY - this.height; // Lock to ground
+      this.hitGround = true;
+      this.vx = 0;
+      this.vy = 0;
     }
 
     return false;
@@ -63,11 +83,11 @@ export class VolcanoProjectile {
 
 export class VolcanoWeapon extends BaseWeapon {
   constructor(assets) {
-    super('Volcano Launcher', 'Launches projectiles that create damaging volcano hazards', '🌋');
+    super('Bomb Launcher', 'Launches explosive bombs that arc far and detonate on impact', '💣');
     this.fireRateBase = 120; // Very slow fire rate (4 seconds at 30fps)
     this.level = 1;
-    this.launchAngle = 30; // Angle in degrees
-    this.launchSpeed = 10;
+    this.launchAngle = 40; // Higher angle for better arc
+    this.launchSpeed = 15; // Faster launch for greater range
     this.assets = assets;
   }
 

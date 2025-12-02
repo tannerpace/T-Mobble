@@ -849,7 +849,7 @@ export class Game {
       const hitGround = bullet.update();
       let bulletRemoved = false;
 
-      // Check if volcano projectile hit the ground
+      // Check if bomb projectile exploded
       if (bullet.isVolcanoProjectile && hitGround) {
         // Spawn volcano hazard at impact location
         const hazard = new VolcanoHazard(bullet.x, bullet.y + bullet.height);
@@ -857,12 +857,12 @@ export class Game {
         this.bullets.splice(i, 1);
         bulletRemoved = true;
 
-        // Visual feedback for impact
+        // Big explosion particles when bomb detonates
         this.particleSystem.spawnParticles(
-          bullet.x,
-          bullet.y,
+          bullet.x + bullet.width / 2,
+          bullet.y + bullet.height / 2,
           ParticleSystem.COLORS.ENEMY_DEATH,
-          10
+          25 // Large explosion
         );
         continue;
       }
