@@ -59,6 +59,14 @@ export class UpgradeSystem {
         icon: '💦',
         weaponType: 'watercannon',
         maxLevel: 5
+      },
+      {
+        id: 'shotgun',
+        name: 'Shotgun',
+        description: 'Spread shot with multiple pellets',
+        icon: '🔫',
+        weaponType: 'shotgun',
+        maxLevel: 5
       }
     ];
   }
@@ -115,6 +123,14 @@ export class UpgradeSystem {
         'Fire Rate +20% - Shoot faster',
         'Damage +35% - Stronger water pressure',
         'Knockback +20 - Maximum knockback force'
+      ],
+      shotgun: [
+        'Unlock Shotgun - Spread shot with knockback',
+        'Pellets +1 - Fire more pellets',
+        'Spread -15% - Tighter spread pattern',
+        'Range +50 - Pellets travel further',
+        'Pellets +2 - Even more pellets',
+        'Devastator - Maximum spread damage'
       ]
     };
 

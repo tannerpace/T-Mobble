@@ -7,9 +7,9 @@ import { BaseWeapon } from './BaseWeapon.js';
 export class ShotgunWeapon extends BaseWeapon {
   constructor(assets) {
     super('Shotgun', 'Fires a spread of black pellets with knockback', '▄︻テ══━一💥');
-    this.fireRateBase = 45; // Moderate fire rate
+    this.fireRateBase = 90; // Slower fire rate to prevent bullet spam
     this.level = 1;
-    this.maxRange = 400; // Shorter range than blaster
+    this.maxRange = 300; // Shorter range so bullets despawn faster
     this.pelletCount = 5; // Number of pellets per shot
     this.spreadAngle = 20; // Spread angle in degrees
     this.assets = assets;

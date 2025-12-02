@@ -671,8 +671,11 @@ export class Game {
     // Update dino
     this.dino.update();
 
-    // Auto-fire weapon system
-    this.weaponSystem.update(this.dino, this.bullets, effects);
+    // Auto-fire weapon system (with bullet cap to prevent performance issues)
+    const MAX_BULLETS = 100;
+    if (this.bullets.length < MAX_BULLETS) {
+      this.weaponSystem.update(this.dino, this.bullets, effects);
+    }
 
     // Spawn obstacles (trees to jump over) - FIXED RATE throughout entire game
     const obstacleSpawnInterval = 300; // Fixed interval, no randomness
