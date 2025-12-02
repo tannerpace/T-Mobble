@@ -35,6 +35,14 @@ export class UpgradeSystem {
         icon: '⚡',
         weaponType: 'laser',
         maxLevel: 5
+      },
+      {
+        id: 'flamethrower',
+        name: 'Flame Thrower',
+        description: 'Flames that cause burning damage',
+        icon: '🔥',
+        weaponType: 'flamethrower',
+        maxLevel: 5
       }
     ];
   }
@@ -67,6 +75,14 @@ export class UpgradeSystem {
         'Length +40% - Longer range',
         'Dual Laser - Fire two beams',
         'Piercing Laser - Unlimited pierce'
+      ],
+      flamethrower: [
+        'Unlock Flame Thrower - Enemies burn over time',
+        'Burn +50% - Stronger burning damage',
+        'Range +25% - Longer flame stream',
+        'Duration +50% - Enemies burn longer',
+        'Inferno - Wider flame cone',
+        'Hellfire - Maximum burn damage'
       ]
     };
 

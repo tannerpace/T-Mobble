@@ -5,6 +5,9 @@
 import { BaseEntity } from './BaseEntity.js';
 
 export class BaseEnemy extends BaseEntity {
+  // Constants for burning effect
+  static FLAME_PARTICLE_INTERVAL = 5; // Generate flame particles every 5 frames
+  
   /**
    * @param {HTMLCanvasElement} canvas - Game canvas
    * @param {number} gameSpeed - Current game speed
@@ -36,6 +39,13 @@ export class BaseEnemy extends BaseEntity {
     // Animation
     this.frameCount = 0;
     this.damageFlash = 0;
+
+    // Burning status effect
+    this.isBurning = false;
+    this.burnDamage = 0;
+    this.burnDuration = 0;
+    this.burnTickCounter = 0;
+    this.burnTickInterval = 15; // Apply burn damage every 15 frames
   }
 
   /**
@@ -47,6 +57,18 @@ export class BaseEnemy extends BaseEntity {
     this.health -= amount;
     this.damageFlash = 3; // Flash for 3 frames
     return this.health <= 0;
+  }
+
+  /**
+   * Apply burning effect to enemy
+   * @param {number} damage - Damage per tick
+   * @param {number} duration - Duration in frames
+   */
+  applyBurn(damage = 0.1, duration = 180) {
+    this.isBurning = true;
+    this.burnDamage = damage;
+    this.burnDuration = duration;
+    this.burnTickCounter = 0;
   }
 
   /**
@@ -66,6 +88,22 @@ export class BaseEnemy extends BaseEntity {
 
     if (this.damageFlash > 0) {
       this.damageFlash--;
+    }
+
+    // Apply burn damage over time
+    if (this.isBurning) {
+      this.burnTickCounter++;
+      // Apply burn damage at regular intervals
+      if (this.burnTickCounter >= this.burnTickInterval) {
+        this.health -= this.burnDamage;
+        this.burnTickCounter = 0;
+      }
+      
+      // Decrease burn duration
+      this.burnDuration--;
+      if (this.burnDuration <= 0) {
+        this.isBurning = false;
+      }
     }
   }
 
@@ -137,10 +175,44 @@ export class BaseEnemy extends BaseEntity {
       ctx.shadowBlur = 10;
     }
 
+    // Burning effect - orange glow
+    if (this.isBurning) {
+      ctx.shadowColor = '#FF6600';
+      ctx.shadowBlur = 15;
+    }
+
     const { x: centerX, y: centerY } = this.getCenter();
     ctx.fillText(emoji, centerX, centerY);
 
     ctx.shadowBlur = 0;
+
+    // Draw flame particles for burning enemies
+    if (this.isBurning && this.frameCount % BaseEnemy.FLAME_PARTICLE_INTERVAL === 0) {
+      this.drawBurnEffect(ctx);
+    }
+  }
+
+  /**
+   * Draw burning effect particles
+   * @param {CanvasRenderingContext2D} ctx - Canvas context
+   */
+  drawBurnEffect(ctx) {
+    const { x: centerX, y: centerY } = this.getCenter();
+    
+    // Draw small flame particles
+    for (let i = 0; i < 3; i++) {
+      const offsetX = (Math.random() - 0.5) * this.width;
+      const offsetY = (Math.random() - 0.5) * this.height;
+      const flameSize = 3 + Math.random() * 3;
+      
+      ctx.save();
+      ctx.globalAlpha = 0.7;
+      ctx.fillStyle = Math.random() > 0.5 ? '#FF6600' : '#FF9900';
+      ctx.beginPath();
+      ctx.arc(centerX + offsetX, centerY + offsetY, flameSize, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
   }
 
   /**

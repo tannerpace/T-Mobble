@@ -870,6 +870,27 @@ export class Game {
       const enemy = this.enemies[i];
       enemy.update();
 
+      // Check if enemy died from burn damage
+      if (enemy.isDead()) {
+        // Enemy death from burn - explosion
+        this.particleSystem.spawnParticles(
+          enemy.x + enemy.width / 2,
+          enemy.y + enemy.height / 2,
+          ParticleSystem.COLORS.ENEMY_DEATH,
+          15
+        );
+        this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
+
+        // Spawn coin for elite enemies
+        if (enemy.type === 'elite' && enemy.getCoinDrop) {
+          this.spawnCoin(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.getCoinDrop());
+        }
+
+        this.enemies.splice(i, 1);
+        this.screenShake.shake(6, 100);
+        continue;
+      }
+
       // Check collision with dino
       if (checkCollision(this.dino, enemy)) {
         const damageTaken = this.dino.takeDamage();
