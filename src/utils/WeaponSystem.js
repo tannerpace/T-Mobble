@@ -2,6 +2,7 @@
  * WeaponSystem - Manages multiple auto-firing weapons with various patterns
  */
 import { BulletWeapon } from '../weapons/BulletWeapon.js';
+import { FlameThrowerWeapon } from '../weapons/FlameThrowerWeapon.js';
 import { LaserWeapon } from '../weapons/LaserWeapon.js';
 import { WhipWeapon } from '../weapons/WhipWeapon.js';
 
@@ -14,7 +15,8 @@ export class WeaponSystem {
     this.allWeaponTypes = [
       new BulletWeapon(assets),
       new WhipWeapon(assets),
-      new LaserWeapon(assets)
+      new LaserWeapon(assets),
+      new FlameThrowerWeapon(assets)
     ];
 
     // Active weapons (starts with blaster)
@@ -56,7 +58,8 @@ export class WeaponSystem {
     const weaponMap = {
       'blaster': new BulletWeapon(this.assets),
       'whip': new WhipWeapon(this.assets),
-      'laser': new LaserWeapon(this.assets)
+      'laser': new LaserWeapon(this.assets),
+      'flamethrower': new FlameThrowerWeapon(this.assets)
       // More weapons can be added here as they're implemented
     };
 
@@ -79,7 +82,8 @@ export class WeaponSystem {
     const weaponMap = {
       'blaster': 'Blaster',
       'whip': 'Whip',
-      'laser': 'Laser Beam'
+      'laser': 'Laser Beam',
+      'flamethrower': 'Flame Thrower'
     };
 
     const weaponName = weaponMap[weaponId];
