@@ -45,7 +45,8 @@ export class Dino {
 
   draw(ctx) {
     // Draw T-Rex image with animation
-    if (this.trexImg.complete) {
+    // Check both complete and naturalWidth to ensure image loaded successfully
+    if (this.trexImg.complete && this.trexImg.naturalWidth > 0) {
       // If grounded, apply walking animation by slightly offsetting Y position
       // to create a bobbing effect
       let yOffset = 0;

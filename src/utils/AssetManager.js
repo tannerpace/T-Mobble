@@ -13,7 +13,9 @@ export class AssetManager {
    */
   loadImage(name, path) {
     const img = new Image();
-    img.src = this.basePath + path;
+    // If basePath is empty and path doesn't start with /, add it
+    const fullPath = this.basePath ? this.basePath + path : (path.startsWith('/') ? path : '/' + path);
+    img.src = fullPath;
     this.images[name] = img;
     return img;
   }
@@ -22,7 +24,9 @@ export class AssetManager {
    * Load an audio asset
    */
   loadSound(name, path, volume = 0.5) {
-    const audio = new Audio(this.basePath + path);
+    // If basePath is empty and path doesn't start with /, add it
+    const fullPath = this.basePath ? this.basePath + path : (path.startsWith('/') ? path : '/' + path);
+    const audio = new Audio(fullPath);
     audio.volume = volume;
     this.sounds[name] = audio;
     return audio;

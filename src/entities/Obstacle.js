@@ -15,7 +15,8 @@ export class Obstacle {
 
   draw(ctx) {
     // Draw palm tree image
-    if (this.palmImg.complete) {
+    // Check both complete and naturalWidth to ensure image loaded successfully
+    if (this.palmImg.complete && this.palmImg.naturalWidth > 0) {
       ctx.drawImage(this.palmImg, this.x, this.y, this.width, this.height);
     } else {
       // Fallback while image loads

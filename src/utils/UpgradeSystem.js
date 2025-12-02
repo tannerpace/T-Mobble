@@ -43,6 +43,14 @@ export class UpgradeSystem {
         icon: '🔥',
         weaponType: 'flamethrower',
         maxLevel: 5
+      },
+      {
+        id: 'volcano',
+        name: 'Volcano Launcher',
+        description: 'Arc projectile spawns volcano hazards',
+        icon: '🌋',
+        weaponType: 'volcano',
+        maxLevel: 5
       }
     ];
   }
@@ -83,6 +91,14 @@ export class UpgradeSystem {
         'Duration +50% - Enemies burn longer',
         'Inferno - Wider flame cone',
         'Hellfire - Maximum burn damage'
+      ],
+      volcano: [
+        'Unlock Volcano Launcher - Arc projectile spawns volcano hazards',
+        'Fire Rate +15% - Launch slightly faster',
+        'Hazard Duration +25% - Volcanoes last longer',
+        'Fire Rate +25% - Even faster launches',
+        'Hazard Damage +50% - More damage per tick',
+        'Fire Rate +35% - Maximum launch speed'
       ]
     };
 

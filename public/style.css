@@ -83,6 +83,11 @@ body {
 
 .weapon-icon-display {
     font-size: 24px;
+    transition: transform 0.2s ease;
+}
+
+.weapon-icon-display:hover {
+    transform: scale(1.2);
 }
 
 .weapon-name-display {
@@ -865,6 +870,37 @@ body {
     font-size: 50px;
     margin-bottom: 15px;
     display: block;
+}
+
+.weapon-info {
+    text-align: center;
+}
+
+.weapon-title {
+    font-size: 22px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.weapon-desc {
+    font-size: 14px;
+    opacity: 0.95;
+    line-height: 1.5;
+    margin-top: 10px;
+}
+
+.current-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(255, 215, 0, 0.9);
+    color: #333;
+    padding: 5px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .weapon-name {

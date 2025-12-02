@@ -8,9 +8,11 @@ import { Dino } from '../entities/Dino.js';
 import { EliteEnemy } from '../entities/EliteEnemy.js';
 import { FlyingEnemy } from '../entities/FlyingEnemy.js';
 import { HealthPickup } from '../entities/HealthPickup.js';
+import { MediumEnemy } from '../entities/MediumEnemy.js';
 import { Obstacle } from '../entities/Obstacle.js';
 import { PowerUp } from '../entities/PowerUp.js';
 import { TankEnemy } from '../entities/TankEnemy.js';
+import { VolcanoHazard } from '../entities/VolcanoHazard.js';
 import { XPGem } from '../entities/XPGem.js';
 import { CoinUpgradeManager } from '../utils/CoinUpgradeManager.js';
 import { ExperienceManager } from '../utils/ExperienceManager.js';
@@ -70,6 +72,7 @@ export class Game {
     this.clouds = [new Cloud(canvas), new Cloud(canvas), new Cloud(canvas)];
     this.powerUps = [];
     this.bullets = [];
+    this.volcanoHazards = []; // Ground hazards spawned by volcano weapon
 
     // Input handling
     const jumpBtn = document.getElementById('jumpBtn');
@@ -83,17 +86,44 @@ export class Game {
     this.setupXPSystem();
     this.setupUpgradeUI();
 
-    // Set default starting weapon (Blaster)
-    this.weaponSystem.selectWeapon(0);
-    const weaponIcon = document.getElementById('weaponIcon');
-    const weaponName = document.getElementById('weaponName');
-    if (weaponIcon) weaponIcon.textContent = '🔫';
-    if (weaponName) weaponName.textContent = 'Blaster';
+    // Setup weapon selection UI
+    this.setupWeaponSelectionUI();
+
+    // Load starting weapon from localStorage or use default
+    this.loadStartingWeapon();
 
     // Update UI
     this.updateScoreDisplay();
     this.updateHealthDisplay();
     this.updateXPDisplay();
+  }
+
+  /**
+   * Load starting weapon from localStorage or use default
+   */
+  loadStartingWeapon() {
+    const savedWeaponIndex = localStorage.getItem('preferredStartingWeapon');
+    const weaponIndex = savedWeaponIndex !== null ? parseInt(savedWeaponIndex, 10) : 0;
+
+    // Validate the weapon index
+    const availableWeapons = this.weaponSystem.getAvailableWeapons();
+    const validIndex = weaponIndex >= 0 && weaponIndex < availableWeapons.length ? weaponIndex : 0;
+
+    this.weaponSystem.selectWeapon(validIndex);
+
+    // Update UI
+    const weapon = availableWeapons[validIndex];
+    const weaponIcon = document.getElementById('weaponIcon');
+    const weaponName = document.getElementById('weaponName');
+    if (weaponIcon) weaponIcon.textContent = weapon.icon;
+    if (weaponName) weaponName.textContent = weapon.name;
+  }
+
+  /**
+   * Save starting weapon preference to localStorage
+   */
+  saveStartingWeapon(weaponIndex) {
+    localStorage.setItem('preferredStartingWeapon', weaponIndex.toString());
   }
 
   /**
@@ -187,6 +217,86 @@ export class Game {
    */
   setupUpgradeUI() {
     // Will be set up when modal is shown
+  }
+
+  /**
+   * Setup weapon selection UI
+   */
+  setupWeaponSelectionUI() {
+    const weaponIcon = document.getElementById('weaponIcon');
+
+    // Add click handler to weapon icon to open selection modal
+    if (weaponIcon) {
+      weaponIcon.style.cursor = 'pointer';
+      weaponIcon.title = 'Click to change starting weapon';
+      weaponIcon.addEventListener('click', () => {
+        this.showWeaponSelection();
+      });
+    }
+  }
+
+  /**
+   * Show weapon selection modal
+   */
+  showWeaponSelection() {
+    const weaponModal = document.getElementById('weaponModal');
+    const weaponChoices = document.getElementById('weaponChoices');
+    const availableWeapons = this.weaponSystem.getAvailableWeapons();
+    const currentWeaponIndex = this.weaponSystem.startingWeaponIndex;
+
+    // Clear previous choices
+    weaponChoices.innerHTML = '';
+
+    // Create weapon choice cards
+    availableWeapons.forEach((weapon, index) => {
+      const card = document.createElement('div');
+      card.className = 'weapon-card';
+      if (index === currentWeaponIndex) {
+        card.classList.add('selected');
+      }
+
+      card.innerHTML = `
+        <div class="weapon-icon">${weapon.icon}</div>
+        <div class="weapon-info">
+          <div class="weapon-title">${weapon.name}</div>
+          <div class="weapon-desc">${weapon.description}</div>
+        </div>
+        ${index === currentWeaponIndex ? '<div class="current-badge">Current</div>' : ''}
+      `;
+
+      card.addEventListener('click', () => {
+        // Update selection
+        this.weaponSystem.selectWeapon(index);
+        this.saveStartingWeapon(index);
+
+        // Update UI
+        const weaponIconEl = document.getElementById('weaponIcon');
+        const weaponNameEl = document.getElementById('weaponName');
+        if (weaponIconEl) weaponIconEl.textContent = weapon.icon;
+        if (weaponNameEl) weaponNameEl.textContent = weapon.name;
+
+        // Update card selection
+        weaponChoices.querySelectorAll('.weapon-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+
+        // Update badges
+        weaponChoices.querySelectorAll('.current-badge').forEach(b => b.remove());
+        const badge = document.createElement('div');
+        badge.className = 'current-badge';
+        badge.textContent = 'Current';
+        card.appendChild(badge);
+
+        // Close modal after short delay
+        setTimeout(() => {
+          weaponModal.style.display = 'none';
+        }, 500);
+      });
+
+      weaponChoices.appendChild(card);
+    });
+
+    // Show modal
+    weaponModal.style.display = 'flex';
   }
 
   /**
@@ -412,6 +522,7 @@ export class Game {
     this.healthPickups = [];
     this.powerUps = [];
     this.bullets = [];
+    this.volcanoHazards = [];
     this.scoreManager.reset();
     this.xpManager.reset();
     this.upgradeSystem.reset();
@@ -449,18 +560,21 @@ export class Game {
   }
 
   /**
-   * Spawn an enemy (flying, tank, or elite)
+   * Spawn an enemy (flying, medium, tank, or elite)
    */
   spawnEnemy() {
     const rand = Math.random();
-    if (rand < 0.6) {
-      // 60% chance for flying enemy
+    if (rand < 0.45) {
+      // 45% chance for flying enemy
       this.enemies.push(new FlyingEnemy(this.canvas, this.gameSpeed));
-    } else if (rand < 0.85) {
-      // 25% chance for tank enemy
+    } else if (rand < 0.70) {
+      // 25% chance for medium enemy
+      this.enemies.push(new MediumEnemy(this.canvas, this.gameSpeed));
+    } else if (rand < 0.90) {
+      // 20% chance for tank enemy
       this.enemies.push(new TankEnemy(this.canvas, this.gameSpeed));
     } else {
-      // 15% chance for elite enemy (drops 2x coins!)
+      // 10% chance for elite enemy (drops 2x coins!)
       this.enemies.push(new EliteEnemy(this.canvas, this.gameSpeed));
     }
   }
@@ -585,6 +699,7 @@ export class Game {
     this.updatePowerUps(effects);
     this.updateHealthPickups(effects);
     this.updateBullets();
+    this.updateVolcanoHazards();
     this.updateObstacles();
     this.updateEnemies();
     this.updateXPGems(effects);
@@ -775,8 +890,35 @@ export class Game {
         continue;
       }
 
-      bullet.update();
+      const hitGround = bullet.update();
       let bulletRemoved = false;
+
+      // Check if volcano projectile hit the ground
+      if (bullet.isVolcanoProjectile && hitGround) {
+        // Spawn volcano hazard at impact location
+        const hazard = new VolcanoHazard(bullet.x, bullet.y + bullet.height);
+        this.volcanoHazards.push(hazard);
+        this.bullets.splice(i, 1);
+        bulletRemoved = true;
+
+        // Visual feedback for impact
+        this.particleSystem.spawnParticles(
+          bullet.x,
+          bullet.y,
+          ParticleSystem.COLORS.ENEMY_DEATH,
+          10
+        );
+        continue;
+      }
+
+      // Volcano projectiles don't damage enemies, only spawn hazards
+      if (bullet.isVolcanoProjectile) {
+        // Remove if off-screen
+        if (bullet.isOffScreen(this.canvas.width)) {
+          this.bullets.splice(i, 1);
+        }
+        continue;
+      }
 
       // Bullets ONLY hit enemies, NOT obstacles (trees are obstacles to jump over)
       // Check collision with enemies only
@@ -830,7 +972,67 @@ export class Game {
         this.bullets.splice(i, 1);
       }
     }
-  }  /**
+  }
+
+  /**
+   * Update volcano hazards
+   */
+  updateVolcanoHazards() {
+    for (let i = this.volcanoHazards.length - 1; i >= 0; i--) {
+      const hazard = this.volcanoHazards[i];
+
+      if (!hazard.active) {
+        this.volcanoHazards.splice(i, 1);
+        continue;
+      }
+
+      hazard.update();
+
+      // Check collisions with enemies
+      for (let j = this.enemies.length - 1; j >= 0; j--) {
+        const enemy = this.enemies[j];
+
+        if (hazard.canDamage(enemy)) {
+          hazard.markHit(enemy);
+          const enemyDied = enemy.takeDamage(hazard.getDamage());
+
+          if (enemyDied) {
+            // Enemy death - big explosion
+            this.particleSystem.spawnParticles(
+              enemy.x + enemy.width / 2,
+              enemy.y + enemy.height / 2,
+              ParticleSystem.COLORS.ENEMY_DEATH,
+              15
+            );
+            this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
+
+            // Spawn coin for elite enemies
+            if (enemy.type === 'elite' && enemy.getCoinDrop) {
+              this.spawnCoin(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.getCoinDrop());
+            }
+
+            this.enemies.splice(j, 1);
+            this.screenShake.shake(8, 150);
+          } else {
+            // Enemy hit - small explosion
+            this.particleSystem.spawnParticles(
+              enemy.x + enemy.width / 2,
+              enemy.y + enemy.height / 2,
+              ParticleSystem.COLORS.ENEMY_HIT,
+              8
+            );
+            this.screenShake.shake(3, 75);
+          }
+
+          // Play hit sound
+          this.assets.hitSound.currentTime = 0;
+          this.assets.hitSound.play().catch(e => console.log('Audio play failed:', e));
+        }
+      }
+    }
+  }
+
+  /**
    * Update enemies
    */
   updateEnemies() {
@@ -1030,6 +1232,7 @@ export class Game {
     this.coins.forEach(coin => coin.draw(this.ctx));
     this.healthPickups.forEach(pickup => pickup.draw(this.ctx, this.frameCount));
     this.powerUps.forEach(powerUp => powerUp.draw(this.ctx, this.frameCount));
+    this.volcanoHazards.forEach(hazard => hazard.draw(this.ctx));
     this.bullets.forEach(bullet => bullet.draw(this.ctx));
 
     // Draw weapon effects (whip arc, laser beam, etc.)
