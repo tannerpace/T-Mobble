@@ -101,6 +101,15 @@ export class UpgradeSystem {
           tier: 2,
           maxLevel: 5,
           category: 'weapon'
+        },
+        {
+          id: 'axe',
+          name: 'Axe',
+          description: 'Destroys obstacles',
+          icon: '🪓',
+          tier: 2,
+          maxLevel: 5,
+          category: 'weapon'
         }
       ],
 
