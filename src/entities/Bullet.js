@@ -16,6 +16,7 @@ export class Bullet {
     this.maxRange = 300; // Default range, can be overridden
     this.damage = 1; // Damage dealt to enemies
     this.knockback = 0; // Knockback force applied to enemies
+    this.color = null; // Custom color, null for default
 
     // Calculate velocity based on angle
     const radians = (angle * Math.PI) / 180;
@@ -30,12 +31,15 @@ export class Bullet {
     ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
     ctx.rotate((this.angle * Math.PI) / 180);
 
-    ctx.fillStyle = '#FF4500'; // Orange-red bullet
+    const bulletColor = this.color || '#FF4500'; // Custom or default orange-red bullet
+    ctx.fillStyle = bulletColor;
     ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
 
-    // Bullet glow effect
-    ctx.fillStyle = '#FFA500';
-    ctx.fillRect(-this.width / 2 + 2, -this.height / 2 + 1, 6, 2);
+    // Bullet glow effect (skip for custom colored bullets)
+    if (!this.color) {
+      ctx.fillStyle = '#FFA500';
+      ctx.fillRect(-this.width / 2 + 2, -this.height / 2 + 1, 6, 2);
+    }
 
     ctx.restore();
   }

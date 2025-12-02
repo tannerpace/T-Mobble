@@ -45,27 +45,84 @@ export class Renderer {
   }
 
   /**
-   * Draw the ground line
+   * Draw the ground with sand and grass
    */
   drawGround(frameCount, gameSpeed) {
-    // Ground line at 80% of canvas height (dynamic)
+    this.ctx.save(); // Save context state to prevent affecting other draws
+
+    // Ground level at 80% of canvas height
     const groundY = this.canvas.height * 0.8;
+    const groundHeight = this.canvas.height - groundY;
 
-    this.ctx.strokeStyle = '#535353';
-    this.ctx.lineWidth = 2;
-    this.ctx.beginPath();
-    this.ctx.moveTo(0, groundY);
-    this.ctx.lineTo(this.canvas.width, groundY);
-    this.ctx.stroke();
+    // Draw sand base (fills from ground line to bottom of canvas)
+    this.ctx.fillStyle = '#E6D5A8'; // Sandy tan color
+    this.ctx.fillRect(0, groundY, this.canvas.width, groundHeight);
 
-    // Dashed ground pattern
-    this.ctx.setLineDash([10, 10]);
-    const offset = (frameCount * gameSpeed) % 20;
-    this.ctx.beginPath();
-    this.ctx.moveTo(-offset, groundY + 2);
-    this.ctx.lineTo(this.canvas.width, groundY + 2);
-    this.ctx.stroke();
-    this.ctx.setLineDash([]);
+    // Add darker sand gradient at bottom for depth
+    const sandGradient = this.ctx.createLinearGradient(0, groundY, 0, this.canvas.height);
+    sandGradient.addColorStop(0, 'rgba(210, 180, 140, 0)');
+    sandGradient.addColorStop(1, 'rgba(180, 150, 100, 0.5)');
+    this.ctx.fillStyle = sandGradient;
+    this.ctx.fillRect(0, groundY, this.canvas.width, groundHeight);
+
+    // Draw grass tufts on top of sand
+    const grassColor1 = '#4A7C23'; // Dark green
+    const grassColor2 = '#6B8E23'; // Yellow-green
+    const grassColor3 = '#228B22'; // Forest green
+
+    // Animated grass offset for parallax effect (slower movement)
+    const grassOffset = (frameCount * gameSpeed * 0.15) % 30;
+
+    // Draw multiple layers of grass for depth
+    for (let x = -grassOffset; x < this.canvas.width + 30; x += 8) {
+      // Vary grass height and color for natural look
+      const variation = Math.sin(x * 0.3) * 2;
+      const grassHeight = 12 + variation + Math.sin(x * 0.7) * 3;
+
+      // Alternate grass colors
+      const colorChoice = Math.floor(x / 8) % 3;
+      this.ctx.fillStyle = colorChoice === 0 ? grassColor1 : (colorChoice === 1 ? grassColor2 : grassColor3);
+
+      // Draw grass blade (triangle shape)
+      this.ctx.beginPath();
+      this.ctx.moveTo(x, groundY);
+      this.ctx.lineTo(x + 3, groundY - grassHeight);
+      this.ctx.lineTo(x + 6, groundY);
+      this.ctx.closePath();
+      this.ctx.fill();
+    }
+
+    // Draw a few taller grass tufts for variety
+    for (let x = -grassOffset * 1.5; x < this.canvas.width + 30; x += 25) {
+      const tallGrassHeight = 18 + Math.sin(x * 0.2) * 4;
+      this.ctx.fillStyle = grassColor1;
+
+      this.ctx.beginPath();
+      this.ctx.moveTo(x, groundY);
+      this.ctx.lineTo(x + 2, groundY - tallGrassHeight);
+      this.ctx.lineTo(x + 4, groundY);
+      this.ctx.closePath();
+      this.ctx.fill();
+
+      // Second blade leaning slightly
+      this.ctx.beginPath();
+      this.ctx.moveTo(x + 5, groundY);
+      this.ctx.lineTo(x + 8, groundY - tallGrassHeight * 0.8);
+      this.ctx.lineTo(x + 10, groundY);
+      this.ctx.closePath();
+      this.ctx.fill();
+    }
+
+    // Add small pebbles/dots in sand for texture
+    this.ctx.fillStyle = 'rgba(139, 119, 101, 0.4)';
+    for (let x = -grassOffset * 0.3; x < this.canvas.width + 20; x += 40) {
+      const pebbleY = groundY + 8 + Math.sin(x * 0.5) * 3;
+      this.ctx.beginPath();
+      this.ctx.arc(x, pebbleY, 2, 0, Math.PI * 2);
+      this.ctx.fill();
+    }
+
+    this.ctx.restore(); // Restore context state
   }
 
   /**

@@ -4,6 +4,7 @@
 import { BulletWeapon } from '../weapons/BulletWeapon.js';
 import { FlameThrowerWeapon } from '../weapons/FlameThrowerWeapon.js';
 import { LaserWeapon } from '../weapons/LaserWeapon.js';
+import { ShotgunWeapon } from '../weapons/ShotgunWeapon.js';
 import { VolcanoWeapon } from '../weapons/VolcanoWeapon.js';
 import { WaterCannonWeapon } from '../weapons/WaterCannonWeapon.js';
 import { WhipWeapon } from '../weapons/WhipWeapon.js';
@@ -13,25 +14,23 @@ export class WeaponSystem {
     this.enabled = true;
     this.assets = assets;
 
-    // All weapon types (for selection)
+    // All weapon types (for upgrades)
     this.allWeaponTypes = [
       new BulletWeapon(assets),
       new WhipWeapon(assets),
       new LaserWeapon(assets),
       new FlameThrowerWeapon(assets),
       new VolcanoWeapon(assets),
-      new WaterCannonWeapon(assets)
+      new WaterCannonWeapon(assets),
+      new ShotgunWeapon(assets)
     ];
 
-    // Active weapons (starts with blaster)
-    this.activeWeapons = [this.allWeaponTypes[0]];
-
-    // Starting weapon index for selection
-    this.startingWeaponIndex = 0;
+    // Active weapons (always starts with blaster)
+    this.activeWeapons = [new BulletWeapon(assets)];
   }
 
   /**
-   * Get all available weapons for initial selection
+   * Get all available weapons for upgrades
    */
   getAvailableWeapons() {
     return this.allWeaponTypes.map((weapon, index) => ({
@@ -40,18 +39,6 @@ export class WeaponSystem {
       description: weapon.description,
       icon: weapon.icon
     }));
-  }
-
-  /**
-   * Select a starting weapon by index
-   */
-  selectWeapon(index) {
-    if (index >= 0 && index < this.allWeaponTypes.length) {
-      this.startingWeaponIndex = index;
-      this.activeWeapons = [this.allWeaponTypes[index]];
-      return true;
-    }
-    return false;
   }
 
   /**
@@ -65,7 +52,8 @@ export class WeaponSystem {
       'laser': new LaserWeapon(this.assets),
       'flamethrower': new FlameThrowerWeapon(this.assets),
       'volcano': new VolcanoWeapon(this.assets),
-      'watercannon': new WaterCannonWeapon(this.assets)
+      'watercannon': new WaterCannonWeapon(this.assets),
+      'shotgun': new ShotgunWeapon(this.assets)
       // More weapons can be added here as they're implemented
     };
 
@@ -91,7 +79,8 @@ export class WeaponSystem {
       'laser': 'Laser Beam',
       'flamethrower': 'Flame Thrower',
       'volcano': 'Volcano Launcher',
-      'watercannon': 'Water Cannon'
+      'watercannon': 'Water Cannon',
+      'shotgun': 'Shotgun'
     };
 
     const weaponName = weaponMap[weaponId];
@@ -150,8 +139,8 @@ export class WeaponSystem {
    */
   reset() {
     this.activeWeapons.forEach(weapon => weapon.reset());
-    // Keep only the starting weapon
-    this.activeWeapons = [this.allWeaponTypes[this.startingWeaponIndex]];
+    // Always start with blaster
+    this.activeWeapons = [new BulletWeapon(this.assets)];
   }
 
   /**

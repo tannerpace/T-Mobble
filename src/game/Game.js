@@ -2,14 +2,18 @@
  * Main Game class - orchestrates all game logic
  */
 import { Bullet } from '../entities/Bullet.js';
+import { ChargerEnemy } from '../entities/ChargerEnemy.js';
 import { Cloud } from '../entities/Cloud.js';
 import { Dino } from '../entities/Dino.js';
 import { EliteEnemy } from '../entities/EliteEnemy.js';
 import { FlyingEnemy } from '../entities/FlyingEnemy.js';
+import { FrogEnemy } from '../entities/FrogEnemy.js';
 import { HealthPickup } from '../entities/HealthPickup.js';
+import { LowFlyingEnemy } from '../entities/LowFlyingEnemy.js';
 import { MediumEnemy } from '../entities/MediumEnemy.js';
 import { Obstacle } from '../entities/Obstacle.js';
 import { PowerUp } from '../entities/PowerUp.js';
+import { SuperEliteEnemy } from '../entities/SuperEliteEnemy.js';
 import { TankEnemy } from '../entities/TankEnemy.js';
 import { VolcanoHazard } from '../entities/VolcanoHazard.js';
 import { XPGem } from '../entities/XPGem.js';
@@ -74,44 +78,10 @@ export class Game {
     this.setupXPSystem();
     this.setupUpgradeUI();
 
-    // Setup weapon selection UI
-    this.setupWeaponSelectionUI();
-
-    // Load starting weapon from localStorage or use default
-    this.loadStartingWeapon();
-
     // Update UI
     this.updateScoreDisplay();
     this.updateHealthDisplay();
     this.updateXPDisplay();
-  }
-
-  /**
-   * Load starting weapon from localStorage or use default
-   */
-  loadStartingWeapon() {
-    const savedWeaponIndex = localStorage.getItem('preferredStartingWeapon');
-    const weaponIndex = savedWeaponIndex !== null ? parseInt(savedWeaponIndex, 10) : 0;
-
-    // Validate the weapon index
-    const availableWeapons = this.weaponSystem.getAvailableWeapons();
-    const validIndex = weaponIndex >= 0 && weaponIndex < availableWeapons.length ? weaponIndex : 0;
-
-    this.weaponSystem.selectWeapon(validIndex);
-
-    // Update UI
-    const weapon = availableWeapons[validIndex];
-    const weaponIcon = document.getElementById('weaponIcon');
-    const weaponName = document.getElementById('weaponName');
-    if (weaponIcon) weaponIcon.textContent = weapon.icon;
-    if (weaponName) weaponName.textContent = weapon.name;
-  }
-
-  /**
-   * Save starting weapon preference to localStorage
-   */
-  saveStartingWeapon(weaponIndex) {
-    localStorage.setItem('preferredStartingWeapon', weaponIndex.toString());
   }
 
   /**
@@ -205,86 +175,6 @@ export class Game {
    */
   setupUpgradeUI() {
     // Will be set up when modal is shown
-  }
-
-  /**
-   * Setup weapon selection UI
-   */
-  setupWeaponSelectionUI() {
-    const weaponIcon = document.getElementById('weaponIcon');
-
-    // Add click handler to weapon icon to open selection modal
-    if (weaponIcon) {
-      weaponIcon.style.cursor = 'pointer';
-      weaponIcon.title = 'Click to change starting weapon';
-      weaponIcon.addEventListener('click', () => {
-        this.showWeaponSelection();
-      });
-    }
-  }
-
-  /**
-   * Show weapon selection modal
-   */
-  showWeaponSelection() {
-    const weaponModal = document.getElementById('weaponModal');
-    const weaponChoices = document.getElementById('weaponChoices');
-    const availableWeapons = this.weaponSystem.getAvailableWeapons();
-    const currentWeaponIndex = this.weaponSystem.startingWeaponIndex;
-
-    // Clear previous choices
-    weaponChoices.innerHTML = '';
-
-    // Create weapon choice cards
-    availableWeapons.forEach((weapon, index) => {
-      const card = document.createElement('div');
-      card.className = 'weapon-card';
-      if (index === currentWeaponIndex) {
-        card.classList.add('selected');
-      }
-
-      card.innerHTML = `
-        <div class="weapon-icon">${weapon.icon}</div>
-        <div class="weapon-info">
-          <div class="weapon-title">${weapon.name}</div>
-          <div class="weapon-desc">${weapon.description}</div>
-        </div>
-        ${index === currentWeaponIndex ? '<div class="current-badge">Current</div>' : ''}
-      `;
-
-      card.addEventListener('click', () => {
-        // Update selection
-        this.weaponSystem.selectWeapon(index);
-        this.saveStartingWeapon(index);
-
-        // Update UI
-        const weaponIconEl = document.getElementById('weaponIcon');
-        const weaponNameEl = document.getElementById('weaponName');
-        if (weaponIconEl) weaponIconEl.textContent = weapon.icon;
-        if (weaponNameEl) weaponNameEl.textContent = weapon.name;
-
-        // Update card selection
-        weaponChoices.querySelectorAll('.weapon-card').forEach(c => c.classList.remove('selected'));
-        card.classList.add('selected');
-
-        // Update badges
-        weaponChoices.querySelectorAll('.current-badge').forEach(b => b.remove());
-        const badge = document.createElement('div');
-        badge.className = 'current-badge';
-        badge.textContent = 'Current';
-        card.appendChild(badge);
-
-        // Close modal after short delay
-        setTimeout(() => {
-          weaponModal.style.display = 'none';
-        }, 500);
-      });
-
-      weaponChoices.appendChild(card);
-    });
-
-    // Show modal
-    weaponModal.style.display = 'flex';
   }
 
   /**
@@ -556,27 +446,39 @@ export class Game {
     const lastObstacle = this.obstacles[this.obstacles.length - 1];
 
     if (!lastObstacle || this.canvas.width - lastObstacle.x > minDistance) {
-      this.obstacles.push(new Obstacle(this.canvas, this.gameSpeed, this.assets.palmImg));
+      this.obstacles.push(new Obstacle(this.canvas, this.gameSpeed));
     }
   }
 
   /**
-   * Spawn an enemy (flying, medium, tank, or elite)
+   * Spawn an enemy (flying, low-flying, frog, charger, medium, tank, elite, or super elite)
    */
   spawnEnemy() {
     const rand = Math.random();
-    if (rand < 0.45) {
-      // 45% chance for flying enemy
+    if (rand < 0.22) {
+      // 22% chance for high flying enemy
       this.enemies.push(new FlyingEnemy(this.canvas, this.gameSpeed));
-    } else if (rand < 0.70) {
-      // 25% chance for medium enemy
+    } else if (rand < 0.35) {
+      // 13% chance for low flying enemy (jump-height threat)
+      this.enemies.push(new LowFlyingEnemy(this.canvas, this.gameSpeed));
+    } else if (rand < 0.48) {
+      // 13% chance for frog enemy (weak hopper)
+      this.enemies.push(new FrogEnemy(this.canvas, this.gameSpeed));
+    } else if (rand < 0.58) {
+      // 10% chance for charger enemy (fast ground threat)
+      this.enemies.push(new ChargerEnemy(this.canvas, this.gameSpeed));
+    } else if (rand < 0.72) {
+      // 14% chance for medium enemy
       this.enemies.push(new MediumEnemy(this.canvas, this.gameSpeed));
-    } else if (rand < 0.90) {
-      // 20% chance for tank enemy
+    } else if (rand < 0.84) {
+      // 12% chance for tank enemy
       this.enemies.push(new TankEnemy(this.canvas, this.gameSpeed));
-    } else {
-      // 10% chance for elite enemy (drops 2x coins!)
+    } else if (rand < 0.95) {
+      // 11% chance for elite enemy
       this.enemies.push(new EliteEnemy(this.canvas, this.gameSpeed));
+    } else {
+      // 5% chance for super elite enemy (highest rewards!)
+      this.enemies.push(new SuperEliteEnemy(this.canvas, this.gameSpeed));
     }
   }
 
@@ -604,6 +506,25 @@ export class Game {
    */
   spawnXPGem(x, y, value) {
     this.xpGems.push(new XPGem(x, y, value));
+  }
+
+  /**
+   * Spawn bonus XP based on enemy type
+   */
+  spawnBonusXPForEnemy(enemy) {
+    const centerX = enemy.x + enemy.width / 2;
+    const centerY = enemy.y + enemy.height / 2;
+
+    // Elite enemies drop bonus XP (unified progression)
+    if (enemy.type === 'elite') {
+      this.spawnXPGem(centerX, centerY, 25);
+    }
+
+    // Super Elite enemies drop even more bonus XP
+    if (enemy.type === 'superelite') {
+      this.spawnXPGem(centerX, centerY, 50);
+      this.spawnXPGem(centerX + 10, centerY, 50);
+    }
   }
 
   /**
@@ -644,8 +565,11 @@ export class Game {
     // Update dino
     this.dino.update();
 
-    // Auto-fire weapon system
-    this.weaponSystem.update(this.dino, this.bullets, effects);
+    // Auto-fire weapon system (with bullet cap to prevent performance issues)
+    const MAX_BULLETS = 100;
+    if (this.bullets.length < MAX_BULLETS) {
+      this.weaponSystem.update(this.dino, this.bullets, effects);
+    }
 
     // Spawn obstacles (trees to jump over) - FIXED RATE throughout entire game
     const obstacleSpawnInterval = 300; // Fixed interval, no randomness
@@ -905,11 +829,7 @@ export class Game {
               15 // More particles for death
             );
             this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
-
-            // Elite enemies drop bonus XP (unified progression)
-            if (enemy.type === 'elite') {
-              this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 25);
-            }
+            this.spawnBonusXPForEnemy(enemy);
 
             this.enemies.splice(j, 1);
             this.screenShake.shake(8, 150); // Bigger shake on kill
@@ -974,11 +894,7 @@ export class Game {
               15
             );
             this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
-
-            // Elite enemies drop bonus XP (unified progression)
-            if (enemy.type === 'elite') {
-              this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 25);
-            }
+            this.spawnBonusXPForEnemy(enemy);
 
             this.enemies.splice(j, 1);
             this.screenShake.shake(8, 150);
@@ -1051,11 +967,7 @@ export class Game {
           15
         );
         this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
-
-        // Elite enemies drop bonus XP (unified progression)
-        if (enemy.type === 'elite') {
-          this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 25);
-        }
+        this.spawnBonusXPForEnemy(enemy);
 
         this.enemies.splice(i, 1);
         this.screenShake.shake(6, 100);
