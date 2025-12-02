@@ -3,7 +3,6 @@
  */
 import { Bullet } from '../entities/Bullet.js';
 import { Cloud } from '../entities/Cloud.js';
-import { Coin } from '../entities/Coin.js';
 import { Dino } from '../entities/Dino.js';
 import { EliteEnemy } from '../entities/EliteEnemy.js';
 import { FlyingEnemy } from '../entities/FlyingEnemy.js';
@@ -14,7 +13,7 @@ import { PowerUp } from '../entities/PowerUp.js';
 import { TankEnemy } from '../entities/TankEnemy.js';
 import { VolcanoHazard } from '../entities/VolcanoHazard.js';
 import { XPGem } from '../entities/XPGem.js';
-import { CoinUpgradeManager } from '../utils/CoinUpgradeManager.js';
+// Unified progression system - single XP currency (Fibonacci-based)
 import { ExperienceManager } from '../utils/ExperienceManager.js';
 import { ParticleSystem, ScreenShake } from '../utils/ParticleSystem.js';
 import { ScoreManager } from '../utils/ScoreManager.js';
@@ -36,7 +35,7 @@ export class Game {
     this.gameOver = false;
     this.gameSpeed = 1.5;
     this.maxGameSpeed = 8; // Cap maximum speed for playability
-    this.gravity = 0.5;
+    this.gravity = 0.35; // Further reduced for slower, smoother jump
     this.frameCount = 0;
     this.animationId = null;
     this.isSubmitting = false;
@@ -52,22 +51,11 @@ export class Game {
     this.particleSystem = new ParticleSystem();
     this.screenShake = new ScreenShake();
 
-    // Coin upgrade manager
-    this.coinManager = new CoinUpgradeManager({
-      onUpgradeAvailable: () => {
-        if (this.gameRunning && !this.gameOver) {
-          this.pauseGame();
-          setTimeout(() => this.showUpgradeSelection(), 100);
-        }
-      }
-    });
-
     // Entities
     this.dino = new Dino(canvas, this.gravity, assets);
     this.obstacles = [];
     this.enemies = []; // Flying, tank, and elite enemies
-    this.xpGems = [];
-    this.coins = []; // Coins dropped by enemies
+    this.xpGems = []; // XP gems dropped by enemies (unified progression)
     this.healthPickups = []; // Health restoration items
     this.clouds = [new Cloud(canvas), new Cloud(canvas), new Cloud(canvas)];
     this.powerUps = [];
@@ -608,8 +596,12 @@ export class Game {
   /**
    * Spawn coin at position
    */
-  spawnCoin(x, y, value = 1) {
-    this.coins.push(new Coin(x, y, value));
+  /**
+   * Spawn bonus XP gem (replaces old coin system)
+   * Elite enemies drop higher value XP gems (25-30 XP)
+   */
+  spawnBonusXP(x, y, value = 25) {
+    this.xpGems.push(new XPGem(x, y, value));
   }
 
   /**
@@ -703,7 +695,7 @@ export class Game {
     this.updateObstacles();
     this.updateEnemies();
     this.updateXPGems(effects);
-    this.updateCoins(effects);
+    // Coins removed - unified XP progression
 
     // Update particle system
     this.particleSystem.update();
@@ -748,8 +740,8 @@ export class Game {
         this.assets.blingSound.currentTime = 0;
         this.assets.blingSound.play().catch(e => console.log('Audio play failed:', e));
 
-        // Add coin through manager (handles upgrade logic)
-        this.coinManager.addCoins(1);
+        // Add bonus XP from powerup (replaces old coin system)
+        this.xpManager.addXP(25); // Bonus XP value
       }
 
       // Remove if off-screen or collected
@@ -837,45 +829,9 @@ export class Game {
   }
 
   /**
-   * Update coins
+   * Update coins - REMOVED (unified XP system)
+   * Coins have been converted to bonus XP gems
    */
-  updateCoins(effects) {
-    const magnetRange = effects.magnetRange || 0;
-
-    for (let i = this.coins.length - 1; i >= 0; i--) {
-      const coin = this.coins[i];
-      coin.update(this.dino, magnetRange);
-
-      // Check collision with dino
-      if (coin.checkCollision(this.dino)) {
-        const coinValue = coin.collect();
-
-        // Gold coin particles (extra sparkly for 2x coins)
-        const { x: centerX, y: centerY } = coin.getCenter();
-        this.particleSystem.spawnParticles(
-          centerX,
-          centerY,
-          ParticleSystem.COLORS.COIN_COLLECT,
-          coinValue >= 2 ? 15 : 10
-        );
-
-        // Play bling sound for coins
-        this.assets.blingSound.currentTime = 0;
-        this.assets.blingSound.play().catch(e => console.log('Audio play failed:', e));
-
-        // Add coin through manager (handles upgrade logic)
-        this.coinManager.addCoins(coinValue);
-
-        this.coins.splice(i, 1);
-        continue;
-      }
-
-      // Remove if off-screen
-      if (coin.isOffScreen()) {
-        this.coins.splice(i, 1);
-      }
-    }
-  }
 
   /**
    * Update bullets
@@ -937,9 +893,9 @@ export class Game {
             );
             this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
 
-            // Spawn coin for elite enemies
-            if (enemy.type === 'elite' && enemy.getCoinDrop) {
-              this.spawnCoin(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.getCoinDrop());
+            // Elite enemies drop bonus XP (unified progression)
+            if (enemy.type === 'elite') {
+              this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 25);
             }
 
             this.enemies.splice(j, 1);
@@ -1006,9 +962,9 @@ export class Game {
             );
             this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
 
-            // Spawn coin for elite enemies
-            if (enemy.type === 'elite' && enemy.getCoinDrop) {
-              this.spawnCoin(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.getCoinDrop());
+            // Elite enemies drop bonus XP (unified progression)
+            if (enemy.type === 'elite') {
+              this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 25);
             }
 
             this.enemies.splice(j, 1);
@@ -1083,9 +1039,9 @@ export class Game {
         );
         this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
 
-        // Spawn coin for elite enemies
-        if (enemy.type === 'elite' && enemy.getCoinDrop) {
-          this.spawnCoin(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.getCoinDrop());
+        // Elite enemies drop bonus XP (unified progression)
+        if (enemy.type === 'elite') {
+          this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 25);
         }
 
         this.enemies.splice(i, 1);
@@ -1229,7 +1185,6 @@ export class Game {
     this.obstacles.forEach(obstacle => obstacle.draw(this.ctx));
     this.enemies.forEach(enemy => enemy.draw(this.ctx));
     this.xpGems.forEach(gem => gem.draw(this.ctx));
-    this.coins.forEach(coin => coin.draw(this.ctx));
     this.healthPickups.forEach(pickup => pickup.draw(this.ctx, this.frameCount));
     this.powerUps.forEach(powerUp => powerUp.draw(this.ctx, this.frameCount));
     this.volcanoHazards.forEach(hazard => hazard.draw(this.ctx));
@@ -1243,13 +1198,7 @@ export class Game {
 
     this.ctx.restore(); // Restore after shake
 
-    // Draw UI elements (not affected by shake)
-    // Draw coin counter
-    const { powerUpCount, threshold } = this.coinManager.getState();
-    this.ctx.fillStyle = '#FFD700';
-    this.ctx.font = 'bold 16px Courier New';
-    this.ctx.textAlign = 'left';
-    this.ctx.fillText('💵 ' + powerUpCount + '/' + threshold, 20, 30);
+    // UI elements drawn separately (not affected by shake)
   }
 
   /**

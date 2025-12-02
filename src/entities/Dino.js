@@ -19,7 +19,7 @@ export class Dino {
 
     // Physics
     this.dy = 0;
-    this.jumpPower = -12;
+    this.jumpPower = -9; // Reduced for slower vertical movement
     this.grounded = false;
     this.jumping = false;
     this.jumpHoldTime = 0;
@@ -190,7 +190,7 @@ export class Dino {
   applyUpgradeEffects(effects) {
     this.maxHealth = 3 + effects.maxHealthBonus;
     this.health = Math.min(this.health, this.maxHealth);
-    this.jumpPower = -12 * effects.jumpPowerMod;
+    this.jumpPower = -9 * effects.jumpPowerMod; // Slower vertical movement
     this.hasDoubleJump = effects.doubleJump;
   }
 

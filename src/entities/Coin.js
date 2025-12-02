@@ -17,6 +17,7 @@ export class Coin extends Collectible {
       this.glowColor = '#FFA500'; // Orange glow
     }
   }
+  // todo: make all coins worth the same but increase the number of coins dropped harder enemies drop more coins...
 
   /**
    * Update coin position with custom magnet speed
