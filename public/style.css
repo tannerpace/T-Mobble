@@ -376,7 +376,7 @@ body {
     }
     
     .canvas-wrapper {
-        padding: 80px 10px 5px 10px;
+        padding: 70px 5px 5px 5px;
     }
     
     .instructions {
@@ -392,32 +392,81 @@ body {
     }
 }
 
-/* Landscape mode optimizations */
+/* Landscape mode optimizations - AGGRESSIVE for mobile */
 @media (orientation: landscape) and (max-height: 500px) {
+    .game-container {
+        overflow: hidden;
+    }
+    
     .canvas-wrapper {
-        padding: 60px 10px 5px 10px;
+        padding: 45px 5px 0 5px;
+        flex: 1;
     }
     
     .mobile-controls {
-        padding: 5px;
+        position: fixed;
+        bottom: 10px;
+        right: 15px;
+        padding: 0;
+        z-index: 100;
     }
     
     .mobile-btn {
-        width: 60px;
-        height: 60px;
-        font-size: 24px;
+        width: 55px;
+        height: 55px;
+        font-size: 22px;
+        opacity: 0.8;
     }
     
     .xp-container {
         top: 5px;
+        left: 10px;
+        max-width: 200px;
+    }
+    
+    .level-badge {
+        padding: 4px 8px;
+        min-width: 40px;
+        font-size: 10px;
+    }
+    
+    #levelDisplay {
+        font-size: 14px;
+    }
+    
+    .xp-bar-container {
+        height: 18px;
+    }
+    
+    .xp-text {
+        font-size: 9px;
     }
     
     .health-container {
         top: 5px;
+        right: 10px;
+        padding: 4px 8px;
+    }
+    
+    .health-hearts {
+        font-size: 16px;
     }
     
     .score-container {
-        top: 35px;
+        top: 28px;
+        right: 10px;
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+    
+    .instructions {
+        display: none;
+    }
+    
+    .leaderboard-section {
+        display: none;
+    }
+}
     }
 }
 

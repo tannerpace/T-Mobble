@@ -1,46 +1,86 @@
 /**
  * Main Game class - orchestrates all game logic
  */
-import { Bullet } from '../entities/Bullet.js';
-import { ChargerEnemy } from '../entities/ChargerEnemy.js';
-import { Cloud } from '../entities/Cloud.js';
-import { Dino } from '../entities/Dino.js';
-import { EliteEnemy } from '../entities/EliteEnemy.js';
-import { FlyingEnemy } from '../entities/FlyingEnemy.js';
-import { FrogEnemy } from '../entities/FrogEnemy.js';
-import { GhostEnemy } from '../entities/GhostEnemy.js';
-import { HealthPickup } from '../entities/HealthPickup.js';
-import { LowFlyingEnemy } from '../entities/LowFlyingEnemy.js';
-import { MediumEnemy } from '../entities/MediumEnemy.js';
-import { Obstacle } from '../entities/Obstacle.js';
-import { PowerUp } from '../entities/PowerUp.js';
-import { SuperEliteEnemy } from '../entities/SuperEliteEnemy.js';
-import { TankEnemy } from '../entities/TankEnemy.js';
-import { VolcanoHazard } from '../entities/VolcanoHazard.js';
-import { XPGem } from '../entities/XPGem.js';
-// Unified progression system - single XP currency (Fibonacci-based)
-import { ExperienceManager } from '../utils/ExperienceManager.js';
-import { ParticleSystem, ScreenShake } from '../utils/ParticleSystem.js';
-import { ScoreManager } from '../utils/ScoreManager.js';
-import { UpgradeSystem } from '../utils/UpgradeSystem.js';
-import { WeaponSystem } from '../utils/WeaponSystem.js';
-import { checkCollision } from '../utils/collision.js';
-import { escapeHtml } from '../utils/helpers.js';
-import { InputHandler } from './InputHandler.js';
-import { Renderer } from './Renderer.js';
+import { Bullet } from '../entities/Bullet';
+import { ChargerEnemy } from '../entities/ChargerEnemy';
+import { Cloud } from '../entities/Cloud';
+import { Dino } from '../entities/Dino';
+import { EliteEnemy } from '../entities/EliteEnemy';
+import { FlyingEnemy } from '../entities/FlyingEnemy';
+import { FrogEnemy } from '../entities/FrogEnemy';
+import { GhostEnemy } from '../entities/GhostEnemy';
+import { HealthPickup } from '../entities/HealthPickup';
+import { LowFlyingEnemy } from '../entities/LowFlyingEnemy';
+import { MediumEnemy } from '../entities/MediumEnemy';
+import { Obstacle } from '../entities/Obstacle';
+import { PowerUp } from '../entities/PowerUp';
+import { SuperEliteEnemy } from '../entities/SuperEliteEnemy';
+import { TankEnemy } from '../entities/TankEnemy';
+import { VolcanoHazard } from '../entities/VolcanoHazard';
+import { XPGem } from '../entities/XPGem';
+import type { IEnemy, WeaponId } from '../types';
+import type { LoadedGameAssets } from '../utils/AssetManager';
+import { ExperienceManager } from '../utils/ExperienceManager';
+import { ParticleSystem, ScreenShake } from '../utils/ParticleSystem';
+import { ScoreManager } from '../utils/ScoreManager';
+import { UpgradeSystem } from '../utils/UpgradeSystem';
+import { WeaponSystem } from '../utils/WeaponSystem';
+import { checkCollision } from '../utils/collision';
+import { escapeHtml } from '../utils/helpers';
+import { InputHandler } from './InputHandler';
+import { Renderer } from './Renderer';
 
 export class Game {
-  constructor(canvas, assets) {
+  private canvas: HTMLCanvasElement;
+  private ctx: CanvasRenderingContext2D;
+  private assets: LoadedGameAssets;
+
+  // Game state
+  private gameRunning: boolean;
+  private gameOver: boolean;
+  private gameSpeed: number;
+  private maxGameSpeed: number;
+  private gravity: number;
+  private frameCount: number;
+  private animationId: number | null;
+  private isSubmitting: boolean;
+  private isPaused: boolean;
+  private regenerationCounter: number;
+
+  // Game systems
+  private renderer: Renderer;
+  public scoreManager: ScoreManager;
+  private xpManager: ExperienceManager;
+  private upgradeSystem: UpgradeSystem;
+  private weaponSystem: WeaponSystem;
+  private particleSystem: ParticleSystem;
+  private screenShake: ScreenShake;
+
+  // Entities
+  private dino: Dino;
+  private obstacles: Obstacle[];
+  private enemies: IEnemy[];
+  private xpGems: XPGem[];
+  private healthPickups: HealthPickup[];
+  private clouds: Cloud[];
+  private powerUps: PowerUp[];
+  private bullets: Bullet[];
+  private volcanoHazards: VolcanoHazard[];
+
+  // Input handling
+  private inputHandler: InputHandler;
+
+  constructor(canvas: HTMLCanvasElement, assets: LoadedGameAssets) {
     this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
+    this.ctx = canvas.getContext('2d')!;
     this.assets = assets;
 
     // Game state
     this.gameRunning = false;
     this.gameOver = false;
     this.gameSpeed = 1.3;
-    this.maxGameSpeed = 9; // Cap maximum speed for playability
-    this.gravity = 0.2; // Controls speed of vertical movement (lower = slower)
+    this.maxGameSpeed = 9;
+    this.gravity = 0.2;
     this.frameCount = 0;
     this.animationId = null;
     this.isSubmitting = false;
@@ -59,16 +99,16 @@ export class Game {
     // Entities
     this.dino = new Dino(canvas, this.gravity, assets);
     this.obstacles = [];
-    this.enemies = []; // Flying, tank, and elite enemies
-    this.xpGems = []; // XP gems dropped by enemies (unified progression)
-    this.healthPickups = []; // Health restoration items
+    this.enemies = [];
+    this.xpGems = [];
+    this.healthPickups = [];
     this.clouds = [new Cloud(canvas), new Cloud(canvas), new Cloud(canvas)];
     this.powerUps = [];
     this.bullets = [];
-    this.volcanoHazards = []; // Ground hazards spawned by volcano weapon
+    this.volcanoHazards = [];
 
     // Input handling
-    const jumpBtn = document.getElementById('jumpBtn');
+    const jumpBtn = document.getElementById('jumpBtn') as HTMLElement;
     this.inputHandler = new InputHandler(canvas, jumpBtn);
     this.setupInputCallbacks();
 
@@ -88,8 +128,8 @@ export class Game {
   /**
    * Setup XP system listeners
    */
-  setupXPSystem() {
-    this.xpManager.listeners.onLevelUp = (level, pending) => {
+  private setupXPSystem(): void {
+    this.xpManager.listeners.onLevelUp = (level: number, pending: number) => {
       console.log(`Level up! Now level ${level}`);
 
       // Show level up notification
@@ -102,7 +142,7 @@ export class Game {
       }
     };
 
-    this.xpManager.listeners.onXPGain = (amount, current, max) => {
+    this.xpManager.listeners.onXPGain = (amount: number, current: number, max: number) => {
       this.updateXPDisplay();
     };
   }
@@ -110,26 +150,21 @@ export class Game {
   /**
    * Show level up notification
    */
-  showLevelUpNotification(level) {
-    // Determine if this is a milestone level
+  private showLevelUpNotification(level: number): void {
     const isMilestone = level % 5 === 0;
     const isMajorMilestone = level % 10 === 0;
 
-    // Create spectacular particle burst for level up
     const centerX = this.canvas.width / 2;
     const centerY = this.canvas.height / 3;
 
-    // Spawn confetti celebration!
     const confettiCount = isMajorMilestone ? 50 : isMilestone ? 35 : 25;
     this.particleSystem.spawnConfetti(centerX, centerY, confettiCount);
 
-    // Additional confetti from sides for major milestones
     if (isMajorMilestone) {
       this.particleSystem.spawnConfetti(50, centerY + 50, 20);
       this.particleSystem.spawnConfetti(this.canvas.width - 50, centerY + 50, 20);
     }
 
-    // Add screen shake for major milestones
     if (isMajorMilestone) {
       this.screenShake.shake(10, 400);
     } else if (isMilestone) {
@@ -138,11 +173,9 @@ export class Game {
       this.screenShake.shake(4, 150);
     }
 
-    // Create notification element
     const notification = document.createElement('div');
     notification.className = 'level-up-notification';
 
-    // Special messages for milestone levels
     let message = `🎉 LEVEL ${level}! 🎉`;
     if (isMajorMilestone) {
       message = `✨ LEVEL ${level}! ✨<br><span style="font-size: 0.6em;">MAJOR MILESTONE!</span>`;
@@ -156,7 +189,6 @@ export class Game {
     notification.innerHTML = message;
     document.body.appendChild(notification);
 
-    // Play yeehaw celebration sound for level up!
     try {
       const yeehawSound = this.assets.yeehawSound;
       if (yeehawSound) {
@@ -168,7 +200,6 @@ export class Game {
       // Sound failed, continue without it
     }
 
-    // Remove after animation
     setTimeout(() => {
       notification.remove();
     }, isMajorMilestone ? 1500 : 1000);
@@ -177,39 +208,37 @@ export class Game {
   /**
    * Setup upgrade UI handlers
    */
-  setupUpgradeUI() {
+  private setupUpgradeUI(): void {
     // Will be set up when modal is shown
   }
 
   /**
    * Pause the game
    */
-  pauseGame() {
+  private pauseGame(): void {
     this.isPaused = true;
   }
 
   /**
    * Unpause the game
    */
-  unpauseGame() {
+  private unpauseGame(): void {
     this.isPaused = false;
   }
 
   /**
    * Show upgrade selection modal
    */
-  showUpgradeSelection() {
+  private showUpgradeSelection(): void {
     const modal = document.getElementById('upgradeModal');
     const choicesContainer = document.getElementById('upgradeChoices');
 
     if (!modal || !choicesContainer) return;
 
-    // Use configured upgrade choice count (can be overridden via URL)
     const choiceCount = window.GAME_CONFIG?.upgradeChoiceCount || 3;
     const choices = this.upgradeSystem.getUpgradeChoices(choiceCount);
     choicesContainer.innerHTML = '';
 
-    // Update modal title
     const modalContent = modal.querySelector('.upgrade-content h2');
     if (modalContent) {
       modalContent.textContent = '⬆️ Level Up! Choose an Upgrade';
@@ -236,7 +265,7 @@ export class Game {
       `;
 
       card.addEventListener('click', () => {
-        this.selectUpgrade(weapon.id);
+        this.selectUpgrade(weapon.id as WeaponId | 'healthRefill');
       });
 
       choicesContainer.appendChild(card);
@@ -248,20 +277,15 @@ export class Game {
   /**
    * Select an upgrade (add or level up weapon)
    */
-  selectUpgrade(weaponId) {
-    // Handle health refill
+  private selectUpgrade(weaponId: WeaponId | 'healthRefill'): void {
     if (weaponId === 'healthRefill') {
-      this.dino.maxHealth++; // Add 1 max health slot
-      this.dino.heal(this.dino.maxHealth); // Fully heal
+      this.dino.maxHealth++;
+      this.dino.heal(this.dino.maxHealth);
       this.updateHealthDisplay();
     } else {
-      // Check if weapon was unlocked BEFORE applying upgrade
       const wasUnlocked = this.upgradeSystem.isWeaponUnlocked(weaponId);
-
-      // Apply the upgrade
       this.upgradeSystem.applyUpgrade(weaponId);
 
-      // Add new weapon or update existing weapon level
       if (!wasUnlocked) {
         this.weaponSystem.addWeapon(weaponId);
       } else {
@@ -271,17 +295,14 @@ export class Game {
 
     this.xpManager.consumeLevelUp();
 
-    // Play sound
     this.assets.beepSound.currentTime = 0;
     this.assets.beepSound.play().catch(e => console.log('Audio play failed:', e));
 
-    // Close modal
     const modal = document.getElementById('upgradeModal');
     if (modal) {
       modal.style.display = 'none';
     }
 
-    // Check if more level ups pending
     if (this.xpManager.pendingLevelUps > 0) {
       setTimeout(() => this.showUpgradeSelection(), 300);
     } else {
@@ -292,11 +313,11 @@ export class Game {
   /**
    * Update health display
    */
-  updateHealthDisplay() {
+  private updateHealthDisplay(): void {
     const healthDisplay = document.getElementById('healthDisplay');
     if (!healthDisplay) return;
 
-    const hearts = [];
+    const hearts: string[] = [];
     for (let i = 0; i < this.dino.maxHealth; i++) {
       if (i < this.dino.health) {
         hearts.push('❤️');
@@ -310,30 +331,28 @@ export class Game {
   /**
    * Update XP display
    */
-  updateXPDisplay() {
+  private updateXPDisplay(): void {
     const levelDisplay = document.getElementById('levelDisplay');
-    const xpBar = document.getElementById('xpBar');
+    const xpBar = document.getElementById('xpBar') as HTMLElement | null;
     const xpText = document.getElementById('xpText');
-    const xpBarContainer = document.querySelector('.xp-bar-container');
+    const xpBarContainer = document.querySelector('.xp-bar-container') as HTMLElement | null;
 
     const state = this.xpManager.getState();
 
     if (levelDisplay) {
-      // Add phase indicator emoji based on level
       let phaseEmoji = '';
       if (state.level <= 5) {
-        phaseEmoji = '⚡'; // Fast progression
+        phaseEmoji = '⚡';
       } else if (state.level <= 12) {
-        phaseEmoji = '📈'; // Medium progression
+        phaseEmoji = '📈';
       } else {
-        phaseEmoji = '🚀'; // Hard progression
+        phaseEmoji = '🚀';
       }
       levelDisplay.textContent = `${phaseEmoji} ${state.level}`;
     }
     if (xpBar) {
       xpBar.style.width = `${state.progress}%`;
 
-      // Add visual feedback when close to leveling up
       if (state.progress >= 80) {
         xpBar.style.background = 'linear-gradient(90deg, #FFD700, #FFA500, #FF8C00)';
         xpBar.style.animation = 'pulse 0.8s infinite';
@@ -349,7 +368,6 @@ export class Game {
       xpText.textContent = `${state.xp} / ${state.xpToNextLevel} (${Math.floor(state.progress)}%)`;
     }
 
-    // Add glow to container when close to level up
     if (xpBarContainer) {
       if (state.progress >= 80) {
         xpBarContainer.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.2), 0 0 15px rgba(255,215,0,0.6)';
@@ -362,7 +380,7 @@ export class Game {
   /**
    * Setup input handler callbacks
    */
-  setupInputCallbacks() {
+  private setupInputCallbacks(): void {
     this.inputHandler.onJump = () => this.handleJumpAction();
     this.inputHandler.onJumpRelease = () => this.handleJumpRelease();
   }
@@ -370,7 +388,7 @@ export class Game {
   /**
    * Handle jump action based on game state
    */
-  handleJumpAction() {
+  private handleJumpAction(): void {
     if (!this.gameRunning && !this.gameOver) {
       this.startGame();
     } else if (this.gameOver) {
@@ -383,7 +401,7 @@ export class Game {
   /**
    * Handle jump button release
    */
-  handleJumpRelease() {
+  private handleJumpRelease(): void {
     if (this.gameRunning && !this.gameOver) {
       this.dino.releaseJump();
     }
@@ -392,7 +410,7 @@ export class Game {
   /**
    * Start the game
    */
-  startGame() {
+  private startGame(): void {
     console.log('Starting game...');
     this.gameRunning = true;
   }
@@ -400,7 +418,7 @@ export class Game {
   /**
    * Restart the game after game over
    */
-  restartGame() {
+  private restartGame(): void {
     console.log('Restarting game...');
     this.resetGame();
     this.gameRunning = true;
@@ -409,7 +427,7 @@ export class Game {
   /**
    * Reset game state
    */
-  resetGame() {
+  private resetGame(): void {
     this.obstacles = [];
     this.enemies = [];
     this.xpGems = [];
@@ -435,7 +453,7 @@ export class Game {
   /**
    * Shoot a bullet (unlimited)
    */
-  shootBullet() {
+  private shootBullet(): void {
     const bulletY = this.dino.y + this.dino.height / 2;
     this.bullets.push(new Bullet(this.dino.x + this.dino.width, bulletY));
   }
@@ -443,7 +461,7 @@ export class Game {
   /**
    * Spawn an obstacle
    */
-  spawnObstacle() {
+  private spawnObstacle(): void {
     const minDistance = 250;
     const lastObstacle = this.obstacles[this.obstacles.length - 1];
 
@@ -453,36 +471,27 @@ export class Game {
   }
 
   /**
-   * Spawn an enemy (flying, low-flying, frog, charger, medium, tank, elite, or super elite)
+   * Spawn an enemy
    */
-  spawnEnemy() {
+  private spawnEnemy(): void {
     const rand = Math.random();
     if (rand < 0.22) {
-      // 22% chance for high flying enemy
       this.enemies.push(new FlyingEnemy(this.canvas, this.gameSpeed));
     } else if (rand < 0.35) {
-      // 13% chance for low flying enemy (jump-height threat)
       this.enemies.push(new LowFlyingEnemy(this.canvas, this.gameSpeed));
     } else if (rand < 0.48) {
-      // 13% chance for frog enemy (weak hopper)
       this.enemies.push(new FrogEnemy(this.canvas, this.gameSpeed));
     } else if (rand < 0.58) {
-      // 10% chance for charger enemy (fast ground threat)
       this.enemies.push(new ChargerEnemy(this.canvas, this.gameSpeed));
     } else if (rand < 0.66) {
-      // 8% chance for ghost enemy (phasing threat)
       this.enemies.push(new GhostEnemy(this.canvas, this.gameSpeed));
     } else if (rand < 0.78) {
-      // 12% chance for medium enemy
       this.enemies.push(new MediumEnemy(this.canvas, this.gameSpeed));
     } else if (rand < 0.88) {
-      // 10% chance for tank enemy
       this.enemies.push(new TankEnemy(this.canvas, this.gameSpeed));
     } else if (rand < 0.96) {
-      // 8% chance for elite enemy
       this.enemies.push(new EliteEnemy(this.canvas, this.gameSpeed));
     } else {
-      // 4% chance for super elite enemy (highest rewards!)
       this.enemies.push(new SuperEliteEnemy(this.canvas, this.gameSpeed));
     }
   }
@@ -490,17 +499,16 @@ export class Game {
   /**
    * Spawn a power-up
    */
-  spawnPowerUp() {
+  private spawnPowerUp(): void {
     if (Math.random() < 0.3) {
       this.powerUps.push(new PowerUp(this.canvas, this.gameSpeed));
     }
   }
 
   /**
-   * Spawn a health pickup (rare, only when player is damaged)
+   * Spawn a health pickup
    */
-  spawnHealthPickup() {
-    // Only spawn if player is damaged and random chance
+  private spawnHealthPickup(): void {
     if (this.dino.health < this.dino.maxHealth && Math.random() < 0.15) {
       this.healthPickups.push(new HealthPickup(this.canvas, this.gameSpeed));
     }
@@ -509,23 +517,21 @@ export class Game {
   /**
    * Spawn XP gem at position
    */
-  spawnXPGem(x, y, value) {
+  private spawnXPGem(x: number, y: number, value: number): void {
     this.xpGems.push(new XPGem(x, y, value));
   }
 
   /**
    * Spawn bonus XP based on enemy type
    */
-  spawnBonusXPForEnemy(enemy) {
+  private spawnBonusXPForEnemy(enemy: IEnemy): void {
     const centerX = enemy.x + enemy.width / 2;
     const centerY = enemy.y + enemy.height / 2;
 
-    // Elite enemies drop bonus XP (unified progression)
     if (enemy.type === 'elite') {
       this.spawnXPGem(centerX, centerY, 25);
     }
 
-    // Super Elite enemies drop even more bonus XP
     if (enemy.type === 'superelite') {
       this.spawnXPGem(centerX, centerY, 50);
       this.spawnXPGem(centerX + 10, centerY, 50);
@@ -533,20 +539,16 @@ export class Game {
   }
 
   /**
-   * Spawn coin at position
+   * Spawn bonus XP gem
    */
-  /**
-   * Spawn bonus XP gem (replaces old coin system)
-   * Elite enemies drop higher value XP gems (25-30 XP)
-   */
-  spawnBonusXP(x, y, value = 25) {
+  private spawnBonusXP(x: number, y: number, value: number = 25): void {
     this.xpGems.push(new XPGem(x, y, value));
   }
 
   /**
    * Update score display in UI
    */
-  updateScoreDisplay() {
+  private updateScoreDisplay(): void {
     const currentScoreEl = document.getElementById('currentScore');
     const highScoreEl = document.getElementById('highScore');
 
@@ -561,47 +563,42 @@ export class Game {
   /**
    * Update game state
    */
-  update() {
+  private update(): void {
     if (!this.gameRunning || this.gameOver || this.isPaused) return;
 
     this.frameCount++;
     const effects = this.upgradeSystem.calculateEffects();
 
-    // Update dino
     this.dino.update();
 
-    // Auto-fire weapon system (with bullet cap to prevent performance issues)
     const MAX_BULLETS = 100;
     if (this.bullets.length < MAX_BULLETS) {
       this.weaponSystem.update(this.dino, this.bullets, effects);
     }
 
-    // Spawn obstacles (trees to jump over) - FIXED RATE throughout entire game
-    const obstacleSpawnInterval = 300; // Fixed interval, no randomness
+    const obstacleSpawnInterval = 300;
     if (this.frameCount % obstacleSpawnInterval === 0) {
       this.spawnObstacle();
     }
 
-    // Spawn enemies (flying and tanks) - progressively more as player levels up
     const playerLevel = this.xpManager.level;
     let enemySpawnChance = 0;
     let enemySpawnInterval = 200;
 
-    // Progressive difficulty based on level - enemies increase, obstacles stay constant
     if (playerLevel === 1) {
-      enemySpawnChance = 0.3; // 30% chance, very few enemies
-      enemySpawnInterval = 200; // Every 200 frames
+      enemySpawnChance = 0.3;
+      enemySpawnInterval = 200;
     } else if (playerLevel === 2) {
-      enemySpawnChance = 0.5; // 50% chance
+      enemySpawnChance = 0.5;
       enemySpawnInterval = 150;
     } else if (playerLevel >= 3 && playerLevel <= 5) {
-      enemySpawnChance = 0.7; // 70% chance
+      enemySpawnChance = 0.7;
       enemySpawnInterval = 120;
     } else if (playerLevel >= 6 && playerLevel <= 8) {
-      enemySpawnChance = 0.85; // 85% chance
+      enemySpawnChance = 0.85;
       enemySpawnInterval = 100;
     } else {
-      enemySpawnChance = 1.0; // 100% chance, maximum difficulty
+      enemySpawnChance = 1.0;
       enemySpawnInterval = 80;
     }
 
@@ -609,27 +606,23 @@ export class Game {
       this.spawnEnemy();
     }
 
-    // Spawn power-ups (coins for weapon upgrades)
     if (this.frameCount % 250 === 0 && Math.random() < 0.6) {
       this.spawnPowerUp();
     }
 
-    // Spawn health pickups (rare, only when damaged)
     if (this.frameCount % 400 === 0) {
       this.spawnHealthPickup();
     }
 
-    // Regeneration
     if (effects.regeneration) {
       this.regenerationCounter++;
-      if (this.regenerationCounter >= 600) { // Every 10 seconds
+      if (this.regenerationCounter >= 600) {
         this.dino.heal(1);
         this.updateHealthDisplay();
         this.regenerationCounter = 0;
       }
     }
 
-    // Update all entities
     this.updatePowerUps(effects);
     this.updateHealthPickups(effects);
     this.updateBullets();
@@ -637,21 +630,15 @@ export class Game {
     this.updateObstacles();
     this.updateEnemies();
     this.updateXPGems(effects);
-    // Coins removed - unified XP progression
 
-    // Update particle system
     this.particleSystem.update();
     this.screenShake.update();
 
-    // Update score with speed modifier
     const speedModifier = effects.speedMod || 1;
     this.scoreManager.increment();
     this.updateScoreDisplay();
 
-    // Increase difficulty gradually with diminishing returns
-    // Slower increase at higher speeds to prevent it getting too fast
     if (this.scoreManager.score % 500 === 0 && this.gameSpeed < this.maxGameSpeed) {
-      // Calculate increment based on current speed (smaller increments as speed increases)
       const speedIncrement = this.gameSpeed < 4 ? 0.15 : this.gameSpeed < 6 ? 0.1 : 0.05;
       this.gameSpeed = Math.min(this.maxGameSpeed, this.gameSpeed + (speedIncrement * speedModifier));
     }
@@ -660,16 +647,14 @@ export class Game {
   /**
    * Update power-ups
    */
-  updatePowerUps(effects) {
+  private updatePowerUps(effects: ReturnType<UpgradeSystem['calculateEffects']>): void {
     for (let i = this.powerUps.length - 1; i >= 0; i--) {
       const powerUp = this.powerUps[i];
       powerUp.update();
 
-      // Check collision with dino
       if (powerUp.checkCollision(this.dino)) {
         powerUp.collected = true;
 
-        // Satisfying gold coin burst!
         const { x: centerX, y: centerY } = powerUp.getCenter();
         this.particleSystem.spawnExplosion(
           centerX,
@@ -678,7 +663,6 @@ export class Game {
           0.8
         );
 
-        // Show bonus XP popup
         this.particleSystem.spawnTextPopup(
           centerX,
           centerY - 15,
@@ -687,15 +671,12 @@ export class Game {
           16
         );
 
-        // Play bling sound for coins
         this.assets.blingSound.currentTime = 0;
         this.assets.blingSound.play().catch(e => console.log('Audio play failed:', e));
 
-        // Add bonus XP from powerup (replaces old coin system)
-        this.xpManager.addXP(25); // Bonus XP value
+        this.xpManager.addXP(25);
       }
 
-      // Remove if off-screen or collected
       if (powerUp.isOffScreen() || powerUp.collected) {
         this.powerUps.splice(i, 1);
       }
@@ -705,28 +686,24 @@ export class Game {
   /**
    * Update health pickups
    */
-  updateHealthPickups(effects) {
+  private updateHealthPickups(effects: ReturnType<UpgradeSystem['calculateEffects']>): void {
     for (let i = this.healthPickups.length - 1; i >= 0; i--) {
       const healthPickup = this.healthPickups[i];
       healthPickup.update();
 
-      // Check collision with dino
       if (healthPickup.checkCollision(this.dino)) {
-        // Only collect if not at max health
         if (this.dino.health < this.dino.maxHealth) {
           const healAmount = healthPickup.collect();
           this.dino.heal(healAmount);
           this.updateHealthDisplay();
 
-          // Pink healing particles
           this.particleSystem.spawnParticles(
             healthPickup.x + healthPickup.width / 2,
             healthPickup.y + healthPickup.height / 2,
-            [[255, 182, 193], [255, 105, 180], [255, 192, 203]], // Pink colors
+            [[255, 182, 193], [255, 105, 180], [255, 192, 203]],
             12
           );
 
-          // Play healing sound
           try {
             this.assets.powerUpSound.currentTime = 0;
             this.assets.powerUpSound.play().catch(e => console.log('Audio play failed:', e));
@@ -737,7 +714,6 @@ export class Game {
         }
       }
 
-      // Remove if off-screen or collected
       if (healthPickup.isOffScreen() || healthPickup.collected) {
         this.healthPickups.splice(i, 1);
       }
@@ -747,21 +723,19 @@ export class Game {
   /**
    * Update XP gems
    */
-  updateXPGems(effects) {
+  private updateXPGems(effects: ReturnType<UpgradeSystem['calculateEffects']>): void {
     const magnetRange = effects.magnetRange || 0;
 
     for (let i = this.xpGems.length - 1; i >= 0; i--) {
       const gem = this.xpGems[i];
       gem.update(this.dino, magnetRange);
 
-      // Check collision with dino
       if (gem.checkCollision(this.dino)) {
         const xpValue = gem.collect();
         const xpMultiplier = effects.xpMultiplier || 1;
         const totalXP = Math.floor(xpValue * xpMultiplier);
         this.xpManager.addXP(totalXP);
 
-        // Satisfying XP collection burst
         this.particleSystem.spawnParticles(
           gem.x,
           gem.y,
@@ -769,7 +743,6 @@ export class Game {
           12
         );
 
-        // Show floating XP text for larger gems
         if (xpValue >= 10) {
           this.particleSystem.spawnTextPopup(
             gem.x,
@@ -784,7 +757,6 @@ export class Game {
         continue;
       }
 
-      // Remove if off-screen
       if (gem.isOffScreen()) {
         this.xpGems.splice(i, 1);
       }
@@ -792,14 +764,9 @@ export class Game {
   }
 
   /**
-   * Update coins - REMOVED (unified XP system)
-   * Coins have been converted to bonus XP gems
-   */
-
-  /**
    * Update bullets
    */
-  updateBullets() {
+  private updateBullets(): void {
     const effects = this.upgradeSystem.calculateEffects();
 
     for (let i = this.bullets.length - 1; i >= 0; i--) {
@@ -812,46 +779,37 @@ export class Game {
       const hitGround = bullet.update();
       let bulletRemoved = false;
 
-      // Check if bomb projectile exploded
       if (bullet.isVolcanoProjectile && hitGround) {
-        // Spawn volcano hazard at impact location
         const hazard = new VolcanoHazard(bullet.x, bullet.y + bullet.height);
         this.volcanoHazards.push(hazard);
         this.bullets.splice(i, 1);
         bulletRemoved = true;
 
-        // Big explosion particles when bomb detonates
         this.particleSystem.spawnParticles(
           bullet.x + bullet.width / 2,
           bullet.y + bullet.height / 2,
           ParticleSystem.COLORS.ENEMY_DEATH,
-          25 // Large explosion
+          25
         );
         continue;
       }
 
-      // Volcano projectiles don't damage enemies, only spawn hazards
       if (bullet.isVolcanoProjectile) {
-        // Remove if off-screen
         if (bullet.isOffScreen(this.canvas.width)) {
           this.bullets.splice(i, 1);
         }
         continue;
       }
 
-      // Bullets ONLY hit enemies, NOT obstacles (trees are obstacles to jump over)
-      // Check collision with enemies only
       for (let j = this.enemies.length - 1; j >= 0; j--) {
         const enemy = this.enemies[j];
         if (bullet.checkCollision(enemy)) {
           const enemyDied = enemy.takeDamage(1);
 
           if (enemyDied) {
-            // Track combo for multiplied effects
             const combo = this.particleSystem.registerKill();
             const intensity = this.particleSystem.getComboMultiplier();
 
-            // Enemy death - satisfying explosion!
             const colors = enemy.type === 'ghost'
               ? ParticleSystem.COLORS.GHOST_DEATH
               : ParticleSystem.COLORS.ENEMY_DEATH;
@@ -862,7 +820,6 @@ export class Game {
               intensity
             );
 
-            // Show XP popup
             this.particleSystem.spawnTextPopup(
               enemy.x + enemy.width / 2,
               enemy.y,
@@ -875,19 +832,17 @@ export class Game {
             this.spawnBonusXPForEnemy(enemy);
 
             this.enemies.splice(j, 1);
-            this.screenShake.shake(8 * intensity, 150); // Bigger shake on kill
+            this.screenShake.shake(8 * intensity, 150);
           } else {
-            // Enemy hit - small explosion
             this.particleSystem.spawnParticles(
               bullet.x,
               bullet.y,
               ParticleSystem.COLORS.ENEMY_HIT,
               8
             );
-            this.screenShake.shake(3, 75); // Small shake on hit
+            this.screenShake.shake(3, 75);
           }
 
-          // Play hit sound
           this.assets.hitSound.currentTime = 0;
           this.assets.hitSound.play().catch(e => console.log('Audio play failed:', e));
 
@@ -899,7 +854,6 @@ export class Game {
         }
       }
 
-      // Remove if off-screen
       if (!bulletRemoved && bullet.isOffScreen(this.canvas.width)) {
         this.bullets.splice(i, 1);
       }
@@ -909,7 +863,7 @@ export class Game {
   /**
    * Update volcano hazards
    */
-  updateVolcanoHazards() {
+  private updateVolcanoHazards(): void {
     for (let i = this.volcanoHazards.length - 1; i >= 0; i--) {
       const hazard = this.volcanoHazards[i];
 
@@ -920,7 +874,6 @@ export class Game {
 
       hazard.update();
 
-      // Check collisions with enemies
       for (let j = this.enemies.length - 1; j >= 0; j--) {
         const enemy = this.enemies[j];
 
@@ -929,11 +882,9 @@ export class Game {
           const enemyDied = enemy.takeDamage(hazard.getDamage());
 
           if (enemyDied) {
-            // Track combo
             const combo = this.particleSystem.registerKill();
             const intensity = this.particleSystem.getComboMultiplier();
 
-            // Enemy death - fiery explosion
             this.particleSystem.spawnExplosion(
               enemy.x + enemy.width / 2,
               enemy.y + enemy.height / 2,
@@ -941,7 +892,6 @@ export class Game {
               intensity
             );
 
-            // Show XP popup
             this.particleSystem.spawnTextPopup(
               enemy.x + enemy.width / 2,
               enemy.y,
@@ -956,7 +906,6 @@ export class Game {
             this.enemies.splice(j, 1);
             this.screenShake.shake(8, 150);
           } else {
-            // Enemy hit - small explosion
             this.particleSystem.spawnParticles(
               enemy.x + enemy.width / 2,
               enemy.y + enemy.height / 2,
@@ -966,7 +915,6 @@ export class Game {
             this.screenShake.shake(3, 75);
           }
 
-          // Play hit sound
           this.assets.hitSound.currentTime = 0;
           this.assets.hitSound.play().catch(e => console.log('Audio play failed:', e));
         }
@@ -977,17 +925,14 @@ export class Game {
   /**
    * Update enemies
    */
-  updateEnemies() {
-    // Check weapon collisions with enemies (for whip/laser melee weapons)
-    this.weaponSystem.checkCollisions(this.enemies, (enemy) => {
+  private updateEnemies(): void {
+    this.weaponSystem.checkCollisions(this.enemies, (enemy: IEnemy) => {
       const enemyDied = enemy.takeDamage(1);
 
       if (enemyDied) {
-        // Track combo for multiplied effects
         const combo = this.particleSystem.registerKill();
         const intensity = this.particleSystem.getComboMultiplier();
 
-        // Enemy death - satisfying explosion!
         const colors = enemy.type === 'ghost'
           ? ParticleSystem.COLORS.GHOST_DEATH
           : ParticleSystem.COLORS.ENEMY_DEATH;
@@ -998,7 +943,6 @@ export class Game {
           intensity
         );
 
-        // Show XP popup
         this.particleSystem.spawnTextPopup(
           enemy.x + enemy.width / 2,
           enemy.y,
@@ -1008,19 +952,17 @@ export class Game {
         );
 
         this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.xpValue);
-        this.screenShake.shake(8 * intensity, 150); // Bigger shake on kill
+        this.screenShake.shake(8 * intensity, 150);
       } else {
-        // Enemy hit - small explosion
         this.particleSystem.spawnParticles(
           enemy.x + enemy.width / 2,
           enemy.y + enemy.height / 2,
           ParticleSystem.COLORS.ENEMY_HIT,
           8
         );
-        this.screenShake.shake(3, 75); // Small shake on hit
+        this.screenShake.shake(3, 75);
       }
 
-      // Play hit sound
       this.assets.hitSound.currentTime = 0;
       this.assets.hitSound.play().catch(e => console.log('Audio play failed:', e));
 
@@ -1031,13 +973,10 @@ export class Game {
       const enemy = this.enemies[i];
       enemy.update();
 
-      // Check if enemy died from burn damage
       if (enemy.isDead()) {
-        // Track combo
         const combo = this.particleSystem.registerKill();
         const intensity = this.particleSystem.getComboMultiplier();
 
-        // Enemy death from burn - fiery explosion
         const colors = enemy.type === 'ghost'
           ? ParticleSystem.COLORS.GHOST_DEATH
           : ParticleSystem.COLORS.ENEMY_DEATH;
@@ -1048,7 +987,6 @@ export class Game {
           intensity
         );
 
-        // Show XP popup
         this.particleSystem.spawnTextPopup(
           enemy.x + enemy.width / 2,
           enemy.y,
@@ -1065,12 +1003,10 @@ export class Game {
         continue;
       }
 
-      // Check collision with dino (ghosts only damage when solid)
       const canDamage = enemy.canDamagePlayer ? enemy.canDamagePlayer() : true;
       if (canDamage && checkCollision(this.dino, enemy)) {
         const damageTaken = this.dino.takeDamage();
         if (damageTaken) {
-          // Player damage - bright red/white explosion
           this.particleSystem.spawnParticles(
             this.dino.x + this.dino.width / 2,
             this.dino.y + this.dino.height / 2,
@@ -1078,24 +1014,20 @@ export class Game {
             12
           );
           this.updateHealthDisplay();
-          this.screenShake.shake(12, 200); // Big shake on player damage
+          this.screenShake.shake(12, 200);
 
-          // Play hit sound
           this.assets.endSound.currentTime = 0;
           this.assets.endSound.play().catch(e => console.log('Audio play failed:', e));
 
-          // Check if dino died
           if (this.dino.isDead()) {
             this.handleGameOver();
           }
         }
 
-        // Remove enemy after hit
         this.enemies.splice(i, 1);
         continue;
       }
 
-      // Remove if off-screen
       if (enemy.isOffScreen()) {
         this.enemies.splice(i, 1);
       }
@@ -1105,32 +1037,28 @@ export class Game {
   /**
    * Update obstacles
    */
-  updateObstacles() {
+  private updateObstacles(): void {
     for (let i = this.obstacles.length - 1; i >= 0; i--) {
       const obstacle = this.obstacles[i];
       obstacle.update();
 
-      // Check collision with dino
       if (checkCollision(this.dino, obstacle)) {
         const damageTaken = this.dino.takeDamage();
         if (damageTaken) {
           this.updateHealthDisplay();
-          this.renderer.screenShake(8, 15); // Shake on damage
+          this.renderer.screenShake(8, 15);
 
-          // Play hit sound
           this.assets.endSound.currentTime = 0;
           this.assets.endSound.play().catch(e => console.log('Audio play failed:', e));
 
-          // Check if dino died
           if (this.dino.isDead()) {
             this.handleGameOver();
           }
-        }        // Remove obstacle after hit
+        }
         this.obstacles.splice(i, 1);
         continue;
       }
 
-      // Remove if off-screen
       if (obstacle.isOffScreen()) {
         this.obstacles.splice(i, 1);
       }
@@ -1140,19 +1068,16 @@ export class Game {
   /**
    * Handle game over
    */
-  handleGameOver() {
+  private handleGameOver(): void {
     this.gameOver = true;
     this.gameRunning = false;
 
-    // Play death sound
     this.assets.deadSound.currentTime = 0;
     this.assets.deadSound.play().catch(e => console.log('Audio play failed:', e));
 
-    // Update high score (for local display)
     this.scoreManager.updateHighScore();
     this.updateScoreDisplay();
 
-    // Check if score qualifies for global leaderboard before prompting
     const currentScore = this.scoreManager.getCurrentScore();
     if (currentScore > 0) {
       setTimeout(() => this.checkAndPromptLeaderboard(), 500);
@@ -1162,27 +1087,23 @@ export class Game {
   /**
    * Render all game elements
    */
-  render() {
-    // Apply screen shake
+  private render(): void {
     const shakeOffset = this.screenShake.getOffset();
     this.ctx.save();
     this.ctx.translate(shakeOffset.x, shakeOffset.y);
 
     this.renderer.clear();
 
-    // Draw clouds
     this.clouds.forEach(cloud => {
       cloud.update();
       cloud.draw(this.ctx);
     });
 
-    // Draw ground
     this.renderer.drawGround(this.frameCount, this.gameSpeed);
 
-    // Draw game state screens
     if (!this.gameRunning) {
       this.dino.draw(this.ctx);
-      this.particleSystem.draw(this.ctx); // Draw particles even on start screen
+      this.particleSystem.draw(this.ctx);
       this.ctx.restore();
       this.renderer.drawStartScreen();
       return;
@@ -1191,13 +1112,12 @@ export class Game {
     if (this.gameOver) {
       this.dino.draw(this.ctx);
       this.obstacles.forEach(obstacle => obstacle.draw(this.ctx));
-      this.particleSystem.draw(this.ctx); // Draw particles on game over
+      this.particleSystem.draw(this.ctx);
       this.ctx.restore();
       this.renderer.drawGameOver();
       return;
     }
 
-    // Draw game entities
     this.dino.draw(this.ctx);
     this.obstacles.forEach(obstacle => obstacle.draw(this.ctx));
     this.enemies.forEach(enemy => enemy.draw(this.ctx));
@@ -1207,21 +1127,17 @@ export class Game {
     this.volcanoHazards.forEach(hazard => hazard.draw(this.ctx));
     this.bullets.forEach(bullet => bullet.draw(this.ctx));
 
-    // Draw weapon effects (whip arc, laser beam, etc.)
     this.weaponSystem.draw(this.ctx, this.frameCount);
 
-    // Draw particles (on top of everything)
     this.particleSystem.draw(this.ctx);
 
-    this.ctx.restore(); // Restore after shake
-
-    // UI elements drawn separately (not affected by shake)
+    this.ctx.restore();
   }
 
   /**
    * Main game loop
    */
-  gameLoop() {
+  private gameLoop(): void {
     this.update();
     this.render();
     this.animationId = requestAnimationFrame(() => this.gameLoop());
@@ -1230,7 +1146,7 @@ export class Game {
   /**
    * Start the game loop
    */
-  start() {
+  start(): void {
     console.log('Starting game loop...');
     this.gameLoop();
   }
@@ -1238,17 +1154,16 @@ export class Game {
   /**
    * Setup leaderboard UI event handlers
    */
-  setupLeaderboardUI() {
+  private setupLeaderboardUI(): void {
     const toggleBtn = document.getElementById('toggleLeaderboard');
     const closeBtn = document.getElementById('closeLeaderboard');
-    const leaderboardContainer = document.getElementById('leaderboardContainer');
-    const nameModal = document.getElementById('nameModal');
+    const leaderboardContainer = document.getElementById('leaderboardContainer') as HTMLElement | null;
+    const nameModal = document.getElementById('nameModal') as HTMLElement | null;
     const submitBtn = document.getElementById('submitScore');
     const skipBtn = document.getElementById('skipSubmit');
-    const playerNameInput = document.getElementById('playerNameInput');
+    const playerNameInput = document.getElementById('playerNameInput') as HTMLInputElement | null;
 
-    // Toggle leaderboard display
-    if (toggleBtn) {
+    if (toggleBtn && leaderboardContainer) {
       toggleBtn.addEventListener('click', () => {
         if (leaderboardContainer.style.display === 'none') {
           this.showLeaderboard();
@@ -1258,15 +1173,13 @@ export class Game {
       });
     }
 
-    // Close leaderboard
-    if (closeBtn) {
+    if (closeBtn && leaderboardContainer) {
       closeBtn.addEventListener('click', () => {
         leaderboardContainer.style.display = 'none';
       });
     }
 
-    // Submit score
-    if (submitBtn) {
+    if (submitBtn && playerNameInput) {
       submitBtn.addEventListener('click', async () => {
         const name = playerNameInput.value.trim();
         if (name) {
@@ -1275,14 +1188,12 @@ export class Game {
       });
     }
 
-    // Skip submission
-    if (skipBtn) {
+    if (skipBtn && nameModal) {
       skipBtn.addEventListener('click', () => {
         nameModal.style.display = 'none';
       });
     }
 
-    // Submit on Enter key
     if (playerNameInput) {
       playerNameInput.addEventListener('keypress', async (e) => {
         if (e.key === 'Enter') {
@@ -1297,11 +1208,12 @@ export class Game {
 
   /**
    * Show leaderboard and fetch scores
-   * @param {boolean} forceRefresh - Force refresh from API instead of using cache
    */
-  async showLeaderboard(forceRefresh = false) {
-    const container = document.getElementById('leaderboardContainer');
-    const content = document.getElementById('leaderboardContent');
+  async showLeaderboard(forceRefresh: boolean = false): Promise<void> {
+    const container = document.getElementById('leaderboardContainer') as HTMLElement | null;
+    const content = document.getElementById('leaderboardContent') as HTMLElement | null;
+
+    if (!container || !content) return;
 
     container.style.display = 'block';
     content.innerHTML = '<p class="loading">Loading...</p>';
@@ -1344,15 +1256,14 @@ export class Game {
   }
 
   /**
-   * Check if score qualifies for leaderboard and prompt if it does
+   * Check if score qualifies for leaderboard
    */
-  async checkAndPromptLeaderboard() {
+  async checkAndPromptLeaderboard(): Promise<void> {
     const currentScore = this.scoreManager.getCurrentScore();
 
     try {
       const data = await this.scoreManager.fetchLeaderboard();
 
-      // Check if score qualifies (top 100 or empty leaderboard)
       if (data.success && data.scores) {
         const leaderboard = data.scores;
         const qualifies = leaderboard.length < 100 || currentScore > leaderboard[leaderboard.length - 1].score;
@@ -1361,32 +1272,28 @@ export class Game {
           this.promptScoreSubmission();
         }
       } else {
-        // If can't fetch leaderboard, prompt anyway (benefit of the doubt)
         this.promptScoreSubmission();
       }
     } catch (error) {
       console.error('Error checking leaderboard eligibility:', error);
-      // On error, prompt anyway (benefit of the doubt)
       this.promptScoreSubmission();
     }
   }
 
   /**
-   * Prompt user to submit score after new high score
+   * Prompt user to submit score
    */
-  promptScoreSubmission() {
-    const modal = document.getElementById('nameModal');
-    const input = document.getElementById('playerNameInput');
-    const result = document.getElementById('submitResult');
-    const submitBtn = document.getElementById('submitScore');
+  private promptScoreSubmission(): void {
+    const modal = document.getElementById('nameModal') as HTMLElement | null;
+    const input = document.getElementById('playerNameInput') as HTMLInputElement | null;
+    const result = document.getElementById('submitResult') as HTMLElement | null;
+    const submitBtn = document.getElementById('submitScore') as HTMLButtonElement | null;
 
-    if (modal && input) {
-      // Reset submission state for new prompt
+    if (modal && input && result) {
       this.isSubmitting = false;
       if (submitBtn) {
         submitBtn.disabled = false;
       }
-      // Pre-fill with saved name
       input.value = this.scoreManager.playerName || '';
       result.textContent = '';
       result.className = 'submit-result';
@@ -1398,17 +1305,17 @@ export class Game {
   /**
    * Submit player score to leaderboard
    */
-  async submitPlayerScore(name) {
-    // Prevent double submissions
+  async submitPlayerScore(name: string): Promise<void> {
     if (this.isSubmitting) {
       return;
     }
 
-    const result = document.getElementById('submitResult');
-    const modal = document.getElementById('nameModal');
-    const submitBtn = document.getElementById('submitScore');
+    const result = document.getElementById('submitResult') as HTMLElement | null;
+    const modal = document.getElementById('nameModal') as HTMLElement | null;
+    const submitBtn = document.getElementById('submitScore') as HTMLButtonElement | null;
 
-    // Disable submit button and set submitting state
+    if (!result || !modal) return;
+
     this.isSubmitting = true;
     if (submitBtn) {
       submitBtn.disabled = true;
@@ -1424,25 +1331,21 @@ export class Game {
         result.textContent = `🎉 Rank #${response.rank} of ${response.total}!`;
         result.className = 'submit-result success';
 
-        // Close modal after 2 seconds
         setTimeout(() => {
           modal.style.display = 'none';
-          // Automatically show leaderboard with fresh data
           this.showLeaderboard(true);
         }, 2000);
       } else {
         result.textContent = 'Failed to submit: ' + (response.error || 'Unknown error');
         result.className = 'submit-result error';
-        // Re-enable on failure so user can retry
         this.isSubmitting = false;
         if (submitBtn) {
           submitBtn.disabled = false;
         }
       }
     } catch (error) {
-      result.textContent = 'Error: ' + error.message;
+      result.textContent = 'Error: ' + (error as Error).message;
       result.className = 'submit-result error';
-      // Re-enable on error so user can retry
       this.isSubmitting = false;
       if (submitBtn) {
         submitBtn.disabled = false;

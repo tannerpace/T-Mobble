@@ -1,0 +1,316 @@
+/**
+ * UpgradeSystem - Manages weapon unlocks and weapon level-ups
+ */
+
+export interface WeaponUpgrade {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  weaponType: string;
+  maxLevel: number;
+}
+
+export interface UpgradeChoice {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  currentLevel?: number;
+  nextLevel?: number;
+  isNewWeapon?: boolean;
+  isHealthRefill?: boolean;
+}
+
+export interface UpgradeEffects {
+  speedMod: number;
+  magnetRange: number;
+  xpMultiplier: number;
+  maxHealthBonus: number;
+  jumpPowerMod: number;
+  regeneration: boolean;
+  fireRateMod: number;
+  damageMod: number;
+}
+
+export class UpgradeSystem {
+  private unlockedWeapons: Set<string>;
+  private weaponLevels: Map<string, number>;
+
+  constructor() {
+    this.unlockedWeapons = new Set(['blaster']);
+    this.weaponLevels = new Map([['blaster', 1]]);
+  }
+
+  /**
+   * Get all available upgrades (new weapons + existing weapon level-ups)
+   */
+  getAvailableWeaponUpgrades(): WeaponUpgrade[] {
+    return [
+      {
+        id: 'blaster',
+        name: 'Blaster',
+        description: 'Standard projectile weapon',
+        icon: '🔫',
+        weaponType: 'bullet',
+        maxLevel: 5
+      },
+      {
+        id: 'whip',
+        name: 'Whip',
+        description: 'Melee arc attack with close range',
+        icon: '🪢',
+        weaponType: 'whip',
+        maxLevel: 5
+      },
+      {
+        id: 'laser',
+        name: 'Laser Beam',
+        description: 'Continuous damage beam',
+        icon: '⚡',
+        weaponType: 'laser',
+        maxLevel: 5
+      },
+      {
+        id: 'flamethrower',
+        name: 'Flame Thrower',
+        description: 'Flames that cause burning damage',
+        icon: '🔥',
+        weaponType: 'flamethrower',
+        maxLevel: 5
+      },
+      {
+        id: 'volcano',
+        name: 'Volcano Launcher',
+        description: 'Arc projectile spawns volcano hazards',
+        icon: '🌋',
+        weaponType: 'volcano',
+        maxLevel: 5
+      },
+      {
+        id: 'watercannon',
+        name: 'Water Cannon',
+        description: 'Pressurized water bursts with knockback',
+        icon: '💦',
+        weaponType: 'watercannon',
+        maxLevel: 5
+      },
+      {
+        id: 'shotgun',
+        name: 'Shotgun',
+        description: 'Spread shot with multiple pellets',
+        icon: '🔫',
+        weaponType: 'shotgun',
+        maxLevel: 5
+      },
+      {
+        id: 'orbital',
+        name: 'Orbital',
+        description: 'Auto-targeting orbs that orbit you',
+        icon: '🔮',
+        weaponType: 'orbital',
+        maxLevel: 5
+      }
+    ];
+  }
+
+  /**
+   * Get upgrade descriptions based on weapon and level
+   */
+  getUpgradeDescription(weaponId: string, currentLevel: number): string {
+    const descriptions: Record<string, string[]> = {
+      blaster: [
+        'Unlock Blaster - Basic projectile weapon',
+        'Range +20% - Bullets travel further',
+        'Range +40% - Even longer range',
+        'Range +60% - Maximum range',
+        'Pierce +1 - Bullets pierce one enemy',
+        'Pierce +2 - Bullets pierce multiple enemies'
+      ],
+      whip: [
+        'Unlock Whip - Melee arc attack',
+        'Range +25% - Wider arc radius',
+        'Speed +30% - Attack faster',
+        'Range +50% - Maximum arc size',
+        'Multi-hit - Hit multiple enemies',
+        'Lightning Whip - Chain damage'
+      ],
+      laser: [
+        'Unlock Laser - Continuous beam',
+        'Width +50% - Thicker beam',
+        'Damage +30% - More damage per tick',
+        'Length +40% - Longer range',
+        'Dual Laser - Fire two beams',
+        'Piercing Laser - Unlimited pierce'
+      ],
+      flamethrower: [
+        'Unlock Flame Thrower - Enemies burn over time',
+        'Burn +50% - Stronger burning damage',
+        'Range +25% - Longer flame stream',
+        'Duration +50% - Enemies burn longer',
+        'Inferno - Wider flame cone',
+        'Hellfire - Maximum burn damage'
+      ],
+      volcano: [
+        'Unlock Volcano Launcher - Arc projectile spawns volcano hazards',
+        'Fire Rate +15% - Launch slightly faster',
+        'Hazard Duration +25% - Volcanoes last longer',
+        'Fire Rate +25% - Even faster launches',
+        'Hazard Damage +50% - More damage per tick',
+        'Fire Rate +35% - Maximum launch speed'
+      ],
+      watercannon: [
+        'Unlock Water Cannon - Pressurized water with knockback',
+        'Range +50 - Water travels further',
+        'Splash +8 - Larger splash radius',
+        'Fire Rate +20% - Shoot faster',
+        'Damage +35% - Stronger water pressure',
+        'Knockback +20 - Maximum knockback force'
+      ],
+      shotgun: [
+        'Unlock Shotgun - Spread shot with knockback',
+        'Pellets +1 - Fire more pellets',
+        'Spread -15% - Tighter spread pattern',
+        'Range +50 - Pellets travel further',
+        'Pellets +2 - Even more pellets',
+        'Devastator - Maximum spread damage'
+      ],
+      orbital: [
+        'Unlock Orbital - Auto-targeting orbs orbit you',
+        'Orbs +1 - Gain an additional orb',
+        'Range +20% - Orbs seek enemies further',
+        'Orbs +1 - Even more orbs',
+        'Speed +30% - Orbs attack faster',
+        'Max Orbit - 6 orbs with maximum range'
+      ]
+    };
+
+    const weaponDescs = descriptions[weaponId] || ['Unlock ' + weaponId, 'Level up', 'Level up', 'Level up', 'Level up', 'Max level'];
+    return weaponDescs[currentLevel] || 'Max level reached';
+  }
+
+  /**
+   * Get a random selection of upgrades (new weapons + level-ups)
+   */
+  getUpgradeChoices(count: number = 3): UpgradeChoice[] {
+    const weapons = this.getAvailableWeaponUpgrades();
+    const available: UpgradeChoice[] = [];
+
+    weapons.forEach(weapon => {
+      const currentLevel = this.weaponLevels.get(weapon.id) || 0;
+      const isUnlocked = this.unlockedWeapons.has(weapon.id);
+
+      if (!isUnlocked) {
+        available.push({
+          id: weapon.id,
+          name: weapon.name,
+          description: this.getUpgradeDescription(weapon.id, 0),
+          icon: weapon.icon,
+          currentLevel: 0,
+          isNewWeapon: true
+        });
+      } else if (currentLevel < weapon.maxLevel) {
+        available.push({
+          id: weapon.id,
+          name: weapon.name,
+          description: this.getUpgradeDescription(weapon.id, currentLevel),
+          icon: weapon.icon,
+          currentLevel: currentLevel,
+          nextLevel: currentLevel + 1,
+          isNewWeapon: false
+        });
+      }
+    });
+
+    // Add health refill option with 40% chance
+    if (Math.random() < 0.4) {
+      available.push({
+        id: 'healthRefill',
+        name: 'Health Refill',
+        description: 'Restore all health + gain 1 max health',
+        icon: '💚',
+        isHealthRefill: true
+      });
+    }
+
+    // Shuffle and return requested count
+    const shuffled = available.sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, Math.min(count, shuffled.length));
+  }
+
+  /**
+   * Apply a weapon upgrade (unlock or level up)
+   */
+  applyUpgrade(weaponId: string): boolean {
+    if (weaponId === 'healthRefill') {
+      return false;
+    }
+
+    const currentLevel = this.weaponLevels.get(weaponId) || 0;
+
+    if (!this.unlockedWeapons.has(weaponId)) {
+      this.unlockedWeapons.add(weaponId);
+      this.weaponLevels.set(weaponId, 1);
+    } else {
+      this.weaponLevels.set(weaponId, currentLevel + 1);
+    }
+    return true;
+  }
+
+  /**
+   * Get weapon level
+   */
+  getWeaponLevel(weaponId: string): number {
+    return this.weaponLevels.get(weaponId) || 0;
+  }
+
+  /**
+   * Get upgrade level (compatibility method)
+   */
+  getUpgradeLevel(upgradeId: string): number {
+    return this.weaponLevels.get(upgradeId) || 0;
+  }
+
+  /**
+   * Calculate total effects from all upgrades (compatibility method)
+   */
+  calculateEffects(): UpgradeEffects {
+    return {
+      speedMod: 1,
+      magnetRange: 0,
+      xpMultiplier: 1,
+      maxHealthBonus: 0,
+      jumpPowerMod: 1,
+      regeneration: false,
+      fireRateMod: 1,
+      damageMod: 1
+    };
+  }
+
+  /**
+   * Check if weapon is unlocked
+   */
+  isWeaponUnlocked(weaponId: string): boolean {
+    return this.unlockedWeapons.has(weaponId);
+  }
+
+  /**
+   * Get all unlocked weapons with their levels
+   */
+  getUnlockedWeapons(): Array<{ id: string; level: number }> {
+    return Array.from(this.unlockedWeapons).map(id => ({
+      id,
+      level: this.weaponLevels.get(id) || 0
+    }));
+  }
+
+  /**
+   * Reset all upgrades
+   */
+  reset(): void {
+    this.unlockedWeapons.clear();
+    this.unlockedWeapons.add('blaster');
+    this.weaponLevels.clear();
+    this.weaponLevels.set('blaster', 1);
+  }
+}
