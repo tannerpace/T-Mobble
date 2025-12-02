@@ -78,44 +78,10 @@ export class Game {
     this.setupXPSystem();
     this.setupUpgradeUI();
 
-    // Setup weapon selection UI
-    this.setupWeaponSelectionUI();
-
-    // Load starting weapon from localStorage or use default
-    this.loadStartingWeapon();
-
     // Update UI
     this.updateScoreDisplay();
     this.updateHealthDisplay();
     this.updateXPDisplay();
-  }
-
-  /**
-   * Load starting weapon from localStorage or use default
-   */
-  loadStartingWeapon() {
-    const savedWeaponIndex = localStorage.getItem('preferredStartingWeapon');
-    const weaponIndex = savedWeaponIndex !== null ? parseInt(savedWeaponIndex, 10) : 0;
-
-    // Validate the weapon index
-    const availableWeapons = this.weaponSystem.getAvailableWeapons();
-    const validIndex = weaponIndex >= 0 && weaponIndex < availableWeapons.length ? weaponIndex : 0;
-
-    this.weaponSystem.selectWeapon(validIndex);
-
-    // Update UI
-    const weapon = availableWeapons[validIndex];
-    const weaponIcon = document.getElementById('weaponIcon');
-    const weaponName = document.getElementById('weaponName');
-    if (weaponIcon) weaponIcon.textContent = weapon.icon;
-    if (weaponName) weaponName.textContent = weapon.name;
-  }
-
-  /**
-   * Save starting weapon preference to localStorage
-   */
-  saveStartingWeapon(weaponIndex) {
-    localStorage.setItem('preferredStartingWeapon', weaponIndex.toString());
   }
 
   /**
@@ -209,86 +175,6 @@ export class Game {
    */
   setupUpgradeUI() {
     // Will be set up when modal is shown
-  }
-
-  /**
-   * Setup weapon selection UI
-   */
-  setupWeaponSelectionUI() {
-    const weaponIcon = document.getElementById('weaponIcon');
-
-    // Add click handler to weapon icon to open selection modal
-    if (weaponIcon) {
-      weaponIcon.style.cursor = 'pointer';
-      weaponIcon.title = 'Click to change starting weapon';
-      weaponIcon.addEventListener('click', () => {
-        this.showWeaponSelection();
-      });
-    }
-  }
-
-  /**
-   * Show weapon selection modal
-   */
-  showWeaponSelection() {
-    const weaponModal = document.getElementById('weaponModal');
-    const weaponChoices = document.getElementById('weaponChoices');
-    const availableWeapons = this.weaponSystem.getAvailableWeapons();
-    const currentWeaponIndex = this.weaponSystem.startingWeaponIndex;
-
-    // Clear previous choices
-    weaponChoices.innerHTML = '';
-
-    // Create weapon choice cards
-    availableWeapons.forEach((weapon, index) => {
-      const card = document.createElement('div');
-      card.className = 'weapon-card';
-      if (index === currentWeaponIndex) {
-        card.classList.add('selected');
-      }
-
-      card.innerHTML = `
-        <div class="weapon-icon">${weapon.icon}</div>
-        <div class="weapon-info">
-          <div class="weapon-title">${weapon.name}</div>
-          <div class="weapon-desc">${weapon.description}</div>
-        </div>
-        ${index === currentWeaponIndex ? '<div class="current-badge">Current</div>' : ''}
-      `;
-
-      card.addEventListener('click', () => {
-        // Update selection
-        this.weaponSystem.selectWeapon(index);
-        this.saveStartingWeapon(index);
-
-        // Update UI
-        const weaponIconEl = document.getElementById('weaponIcon');
-        const weaponNameEl = document.getElementById('weaponName');
-        if (weaponIconEl) weaponIconEl.textContent = weapon.icon;
-        if (weaponNameEl) weaponNameEl.textContent = weapon.name;
-
-        // Update card selection
-        weaponChoices.querySelectorAll('.weapon-card').forEach(c => c.classList.remove('selected'));
-        card.classList.add('selected');
-
-        // Update badges
-        weaponChoices.querySelectorAll('.current-badge').forEach(b => b.remove());
-        const badge = document.createElement('div');
-        badge.className = 'current-badge';
-        badge.textContent = 'Current';
-        card.appendChild(badge);
-
-        // Close modal after short delay
-        setTimeout(() => {
-          weaponModal.style.display = 'none';
-        }, 500);
-      });
-
-      weaponChoices.appendChild(card);
-    });
-
-    // Show modal
-    weaponModal.style.display = 'flex';
   }
 
   /**
@@ -560,7 +446,7 @@ export class Game {
     const lastObstacle = this.obstacles[this.obstacles.length - 1];
 
     if (!lastObstacle || this.canvas.width - lastObstacle.x > minDistance) {
-      this.obstacles.push(new Obstacle(this.canvas, this.gameSpeed, this.assets.palmImg));
+      this.obstacles.push(new Obstacle(this.canvas, this.gameSpeed));
     }
   }
 

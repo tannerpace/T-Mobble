@@ -14,7 +14,7 @@ export class WeaponSystem {
     this.enabled = true;
     this.assets = assets;
 
-    // All weapon types (for selection)
+    // All weapon types (for upgrades)
     this.allWeaponTypes = [
       new BulletWeapon(assets),
       new WhipWeapon(assets),
@@ -25,15 +25,12 @@ export class WeaponSystem {
       new ShotgunWeapon(assets)
     ];
 
-    // Active weapons (starts with blaster)
-    this.activeWeapons = [this.allWeaponTypes[0]];
-
-    // Starting weapon index for selection
-    this.startingWeaponIndex = 0;
+    // Active weapons (always starts with blaster)
+    this.activeWeapons = [new BulletWeapon(assets)];
   }
 
   /**
-   * Get all available weapons for initial selection
+   * Get all available weapons for upgrades
    */
   getAvailableWeapons() {
     return this.allWeaponTypes.map((weapon, index) => ({
@@ -42,18 +39,6 @@ export class WeaponSystem {
       description: weapon.description,
       icon: weapon.icon
     }));
-  }
-
-  /**
-   * Select a starting weapon by index
-   */
-  selectWeapon(index) {
-    if (index >= 0 && index < this.allWeaponTypes.length) {
-      this.startingWeaponIndex = index;
-      this.activeWeapons = [this.allWeaponTypes[index]];
-      return true;
-    }
-    return false;
   }
 
   /**
@@ -154,8 +139,8 @@ export class WeaponSystem {
    */
   reset() {
     this.activeWeapons.forEach(weapon => weapon.reset());
-    // Keep only the starting weapon
-    this.activeWeapons = [this.allWeaponTypes[this.startingWeaponIndex]];
+    // Always start with blaster
+    this.activeWeapons = [new BulletWeapon(this.assets)];
   }
 
   /**

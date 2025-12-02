@@ -19,12 +19,12 @@ export class SpawnManager {
   /**
    * Spawn an obstacle
    */
-  spawnObstacle(Obstacle, palmImg) {
+  spawnObstacle(Obstacle) {
     const minDistance = 400; // Increased spacing between obstacles
     const lastObstacle = this.entities.obstacles[this.entities.obstacles.length - 1];
 
     if (!lastObstacle || this.canvas.width - lastObstacle.x > minDistance) {
-      this.entities.addObstacle(new Obstacle(this.canvas, this.gameState.gameSpeed, palmImg));
+      this.entities.addObstacle(new Obstacle(this.canvas, this.gameState.gameSpeed));
     }
   }
 
