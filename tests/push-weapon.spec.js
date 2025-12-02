@@ -9,7 +9,7 @@ test.describe('Push Weapon Tests', () => {
     await page.waitForTimeout(500);
   });
 
-  test('Push Gun is available in weapon upgrades', async ({ page }) => {
+  test('Water Cannon is available in weapon upgrades', async ({ page }) => {
     // Access the game object to check available weapons
     const availableWeapons = await page.evaluate(() => {
       if (window.game && window.game.upgradeSystem) {
@@ -18,11 +18,11 @@ test.describe('Push Weapon Tests', () => {
       return [];
     });
 
-    // Check if Push Gun is in the available weapons
+    // Check if Water Cannon is in the available weapons
     const pushGun = availableWeapons.find(weapon => weapon.id === 'push');
     expect(pushGun).toBeDefined();
-    expect(pushGun.name).toBe('Push Gun');
-    expect(pushGun.icon).toBe('💨');
+    expect(pushGun.name).toBe('Water Cannon');
+    expect(pushGun.icon).toBe('💦');
     expect(pushGun.description).toBe('Knockback weapon that pushes enemies');
   });
 
@@ -98,7 +98,7 @@ test.describe('Push Weapon Tests', () => {
     expect(hasKnockback.pushed).toBe(true);
   });
 
-  test('Push Gun upgrade descriptions are available', async ({ page }) => {
+  test('Water Cannon upgrade descriptions are available', async ({ page }) => {
     const descriptions = await page.evaluate(() => {
       if (window.game && window.game.upgradeSystem) {
         const levels = [];
@@ -111,8 +111,8 @@ test.describe('Push Weapon Tests', () => {
     });
 
     expect(descriptions.length).toBe(6);
-    expect(descriptions[0]).toContain('Unlock Push Gun');
+    expect(descriptions[0]).toContain('Unlock Water Cannon');
     expect(descriptions[1]).toContain('Knockback');
-    expect(descriptions[5]).toContain('Ultimate Push');
+    expect(descriptions[5]).toContain('Ultimate Blast');
   });
 });

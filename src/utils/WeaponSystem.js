@@ -83,7 +83,7 @@ export class WeaponSystem {
       'blaster': 'Blaster',
       'whip': 'Whip',
       'laser': 'Laser Beam',
-      'push': 'Push Gun'
+      'push': 'Water Cannon'
     };
 
     const weaponName = weaponMap[weaponId];

@@ -6,7 +6,7 @@ import { BaseWeapon } from './BaseWeapon.js';
 
 export class PushWeapon extends BaseWeapon {
   constructor(assets) {
-    super('Push Gun', 'Fires knockback rounds that push enemies back', '💨');
+    super('Water Cannon', 'Fires water blasts that push enemies back', '💦');
     this.fireRateBase = 20; // Faster fire rate than regular bullets
     this.level = 1;
     this.maxRange = 400; // Good range

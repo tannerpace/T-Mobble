@@ -38,9 +38,9 @@ export class UpgradeSystem {
       },
       {
         id: 'push',
-        name: 'Push Gun',
+        name: 'Water Cannon',
         description: 'Knockback weapon that pushes enemies',
-        icon: '💨',
+        icon: '💦',
         weaponType: 'push',
         maxLevel: 5
       }
@@ -77,12 +77,12 @@ export class UpgradeSystem {
         'Piercing Laser - Unlimited pierce'
       ],
       push: [
-        'Unlock Push Gun - Pushes enemies back',
-        'Knockback +33% - Stronger push force',
-        'Range +25% - Push from further away',
-        'Knockback +67% - Even stronger push',
-        'Range +50% - Maximum push range',
-        'Ultimate Push - Maximum force and range'
+        'Unlock Water Cannon - Pushes enemies back',
+        'Knockback +33% - Stronger water blast',
+        'Range +25% - Shoot from further away',
+        'Knockback +67% - Even stronger blast',
+        'Range +50% - Maximum water range',
+        'Ultimate Blast - Maximum force and range'
       ]
     };
 
