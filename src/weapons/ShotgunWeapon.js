@@ -47,17 +47,27 @@ export class ShotgunWeapon extends BaseWeapon {
     }
 
     // Create spread pattern
-    const angleStep = this.spreadAngle / (pellets - 1);
-    const startAngle = -this.spreadAngle / 2;
-
-    for (let i = 0; i < pellets; i++) {
-      const angle = startAngle + (angleStep * i);
-      const bullet = new Bullet(bulletX, bulletY, angle, speed, 0);
+    if (pellets === 1) {
+      // Single pellet case - shoot straight
+      const bullet = new Bullet(bulletX, bulletY, 0, speed, 0);
       bullet.maxRange = this.maxRange;
       bullet.damage = 1; // Lower damage per pellet
       bullet.knockback = 8; // Knockback effect
       bullet.color = '#000000'; // Black bullets
       projectiles.push(bullet);
+    } else {
+      const angleStep = this.spreadAngle / (pellets - 1);
+      const startAngle = -this.spreadAngle / 2;
+
+      for (let i = 0; i < pellets; i++) {
+        const angle = startAngle + (angleStep * i);
+        const bullet = new Bullet(bulletX, bulletY, angle, speed, 0);
+        bullet.maxRange = this.maxRange;
+        bullet.damage = 1; // Lower damage per pellet
+        bullet.knockback = 8; // Knockback effect
+        bullet.color = '#000000'; // Black bullets
+        projectiles.push(bullet);
+      }
     }
   }
 }
