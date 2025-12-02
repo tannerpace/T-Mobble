@@ -3,53 +3,120 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=public/index.html" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>T-Mobble - Redirecting...</title>
-  <style>
-    body {
-      font-family: 'Courier New', monospace;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      background: #f7f7f7;
-    }
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="A fun Chrome Dino game clone - jump over obstacles and beat your high score!">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#535353">
+  <title>T-Mobble - Chrome Dino Game Clone</title>
 
-    .message {
-      text-align: center;
-      color: #535353;
-    }
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json">
 
-    .spinner {
-      display: inline-block;
-      width: 30px;
-      height: 30px;
-      border: 3px solid rgba(83, 83, 83, 0.3);
-      border-radius: 50%;
-      border-top-color: #535353;
-      animation: spin 1s ease-in-out infinite;
-    }
+  <!-- Apple Touch Icon -->
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="T-Mobble">
 
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-  </style>
-  <script>
-    // Immediate redirect
-    window.location.href = 'public/index.html';
-  </script>
+  <link rel="stylesheet" href="/style.css">
+
+  <!-- Environment Configuration -->
+  <script src="/config.js"></script>
 </head>
 
 <body>
-  <div class="message">
-    <div class="spinner"></div>
-    <p>Redirecting to game...</p>
-    <p><small>If not redirected, <a href="public/index.html">click here</a></small></p>
+  <div class="game-container">
+    <!-- Health Display -->
+    <div class="health-container">
+      <div id="healthDisplay" class="health-hearts"></div>
+    </div>
+
+    <!-- Weapon Display -->
+    <div class="weapon-display">
+      <span id="weaponIcon" class="weapon-icon-display">🔫</span>
+      <span id="weaponName" class="weapon-name-display">Blaster</span>
+    </div>
+
+    <!-- XP and Level Display -->
+    <div class="xp-container">
+      <div class="level-badge">
+        <span>LVL</span>
+        <span id="levelDisplay">1</span>
+      </div>
+      <div class="xp-bar-container">
+        <div id="xpBar" class="xp-bar" style="width: 0%"></div>
+        <span id="xpText" class="xp-text">0 / 100</span>
+      </div>
+    </div>
+
+    <div class="score-container">
+      <span class="score">HI <span id="highScore">00000</span></span>
+      <span class="score"><span id="currentScore">00000</span></span>
+    </div>
+    <div class="canvas-wrapper">
+      <canvas id="gameCanvas"></canvas>
+    </div>
+    <div class="mobile-controls">
+      <button id="jumpBtn" class="mobile-btn jump-btn" aria-label="Jump">↑</button>
+    </div>
+    <div class="instructions">
+      <p>Press <strong>SPACE</strong> or <strong>↑</strong> to jump | Weapons auto-fire</p>
+      <p>Press <strong>SPACE</strong> to restart | Mobile: Tap <strong>↑</strong> to jump</p>
+    </div>
+
+    <!-- Global Leaderboard -->
+    <div class="leaderboard-section">
+      <button id="toggleLeaderboard" class="leaderboard-btn">🏆 Global Leaderboard</button>
+      <div id="leaderboardContainer" class="leaderboard-container" style="display: none;">
+        <div class="leaderboard-header">
+          <h3>Top 50 Players</h3>
+          <button id="closeLeaderboard" class="close-btn">✕</button>
+        </div>
+        <div id="leaderboardContent" class="leaderboard-content">
+          <p class="loading">Loading...</p>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <!-- Name prompt modal -->
+  <div id="nameModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <h2>🎉 New High Score!</h2>
+      <p>Enter your name for the global leaderboard:</p>
+      <input type="text" id="playerNameInput" maxlength="20" placeholder="Your Name">
+      <div class="modal-buttons">
+        <button id="submitScore" class="modal-btn primary">Submit</button>
+        <button id="skipSubmit" class="modal-btn">Skip</button>
+      </div>
+      <p id="submitResult" class="submit-result"></p>
+    </div>
+  </div>
+
+  <!-- Upgrade Selection Modal -->
+  <div id="upgradeModal" class="modal upgrade-modal" style="display: none;">
+    <div class="modal-content upgrade-content">
+      <h2>⬆️ LEVEL UP! Choose an Upgrade</h2>
+      <div id="upgradeChoices" class="upgrade-choices"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+  <script>
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then((registration) => {
+            console.log('ServiceWorker registration successful');
+          })
+          .catch((err) => {
+            console.log('ServiceWorker registration failed: ', err);
+          });
+      });
+    }
+  </script>
 </body>
 
 </html>
