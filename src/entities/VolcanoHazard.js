@@ -44,13 +44,13 @@ export class VolcanoHazard extends BaseEntity {
     const alpha = Math.max(0.5, 1 - (this.frameCount / this.duration));
 
     ctx.globalAlpha = alpha;
-    ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+    ctx.translate(this.x + this.width / 2, this.y + this.height);
     ctx.scale(pulseScale, pulseScale);
 
     // Draw volcano emoji
     ctx.font = '40px Arial';
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    ctx.textBaseline = 'bottom';
     ctx.fillText('🌋', 0, 0);
 
     // Add lava glow effect
