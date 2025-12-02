@@ -5,6 +5,9 @@
 import { BaseEntity } from './BaseEntity.js';
 
 export class BaseEnemy extends BaseEntity {
+  // Constants for burning effect
+  static FLAME_PARTICLE_INTERVAL = 5; // Generate flame particles every 5 frames
+  
   /**
    * @param {HTMLCanvasElement} canvas - Game canvas
    * @param {number} gameSpeed - Current game speed
@@ -42,6 +45,7 @@ export class BaseEnemy extends BaseEntity {
     this.burnDamage = 0;
     this.burnDuration = 0;
     this.burnTickCounter = 0;
+    this.burnTickInterval = 15; // Apply burn damage every 15 frames
   }
 
   /**
@@ -89,8 +93,8 @@ export class BaseEnemy extends BaseEntity {
     // Apply burn damage over time
     if (this.isBurning) {
       this.burnTickCounter++;
-      // Apply burn damage every 15 frames (about 4 times per second at 60fps)
-      if (this.burnTickCounter >= 15) {
+      // Apply burn damage at regular intervals
+      if (this.burnTickCounter >= this.burnTickInterval) {
         this.health -= this.burnDamage;
         this.burnTickCounter = 0;
       }
@@ -183,7 +187,7 @@ export class BaseEnemy extends BaseEntity {
     ctx.shadowBlur = 0;
 
     // Draw flame particles for burning enemies
-    if (this.isBurning && this.frameCount % 5 === 0) {
+    if (this.isBurning && this.frameCount % BaseEnemy.FLAME_PARTICLE_INTERVAL === 0) {
       this.drawBurnEffect(ctx);
     }
   }

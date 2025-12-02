@@ -13,7 +13,8 @@ export class FlameThrowerWeapon extends BaseWeapon {
     this.level = 1;
     this.damageCounter = 0;
     this.damageInterval = 20; // Apply burn every 20 frames
-    this.burnDamage = 0.1; // Low immediate damage
+    this.immediateDamage = 0.2; // Low immediate damage on hit
+    this.burnDamage = 0.1; // Burn damage per tick
     this.burnDuration = 180; // 3 seconds at 60fps
     this.assets = assets;
     this.soundPlaying = false;
@@ -169,7 +170,7 @@ export class FlameThrowerWeapon extends BaseWeapon {
         enemy.y + enemy.height > this.flameY - this.flameWidth * 1.5) {
         
         // Apply low initial damage
-        const enemyDied = enemy.takeDamage(0.2);
+        const enemyDied = enemy.takeDamage(this.immediateDamage);
         
         // Apply burning effect
         if (enemy.applyBurn) {
