@@ -10,6 +10,7 @@ import { HealthPickup } from '../entities/HealthPickup.js';
 import { MediumEnemy } from '../entities/MediumEnemy.js';
 import { Obstacle } from '../entities/Obstacle.js';
 import { PowerUp } from '../entities/PowerUp.js';
+import { SuperEliteEnemy } from '../entities/SuperEliteEnemy.js';
 import { TankEnemy } from '../entities/TankEnemy.js';
 import { VolcanoHazard } from '../entities/VolcanoHazard.js';
 import { XPGem } from '../entities/XPGem.js';
@@ -548,7 +549,7 @@ export class Game {
   }
 
   /**
-   * Spawn an enemy (flying, medium, tank, or elite)
+   * Spawn an enemy (flying, medium, tank, elite, or super elite)
    */
   spawnEnemy() {
     const rand = Math.random();
@@ -558,12 +559,15 @@ export class Game {
     } else if (rand < 0.70) {
       // 25% chance for medium enemy
       this.enemies.push(new MediumEnemy(this.canvas, this.gameSpeed));
-    } else if (rand < 0.90) {
-      // 20% chance for tank enemy
+    } else if (rand < 0.87) {
+      // 17% chance for tank enemy
       this.enemies.push(new TankEnemy(this.canvas, this.gameSpeed));
-    } else {
-      // 10% chance for elite enemy (drops 2x coins!)
+    } else if (rand < 0.97) {
+      // 10% chance for elite enemy
       this.enemies.push(new EliteEnemy(this.canvas, this.gameSpeed));
+    } else {
+      // 3% chance for super elite enemy (highest rewards!)
+      this.enemies.push(new SuperEliteEnemy(this.canvas, this.gameSpeed));
     }
   }
 
@@ -898,6 +902,12 @@ export class Game {
               this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 25);
             }
 
+            // Super Elite enemies drop even more bonus XP
+            if (enemy.type === 'superelite') {
+              this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 50);
+              this.spawnXPGem(enemy.x + enemy.width / 2 + 10, enemy.y + enemy.height / 2, 50);
+            }
+
             this.enemies.splice(j, 1);
             this.screenShake.shake(8, 150); // Bigger shake on kill
           } else {
@@ -965,6 +975,12 @@ export class Game {
             // Elite enemies drop bonus XP (unified progression)
             if (enemy.type === 'elite') {
               this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 25);
+            }
+
+            // Super Elite enemies drop even more bonus XP
+            if (enemy.type === 'superelite') {
+              this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 50);
+              this.spawnXPGem(enemy.x + enemy.width / 2 + 10, enemy.y + enemy.height / 2, 50);
             }
 
             this.enemies.splice(j, 1);
@@ -1042,6 +1058,12 @@ export class Game {
         // Elite enemies drop bonus XP (unified progression)
         if (enemy.type === 'elite') {
           this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 25);
+        }
+
+        // Super Elite enemies drop even more bonus XP
+        if (enemy.type === 'superelite') {
+          this.spawnXPGem(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 50);
+          this.spawnXPGem(enemy.x + enemy.width / 2 + 10, enemy.y + enemy.height / 2, 50);
         }
 
         this.enemies.splice(i, 1);
