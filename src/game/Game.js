@@ -6,6 +6,7 @@ import { Cloud } from '../entities/Cloud.js';
 import { Dino } from '../entities/Dino.js';
 import { EliteEnemy } from '../entities/EliteEnemy.js';
 import { FlyingEnemy } from '../entities/FlyingEnemy.js';
+import { FrogEnemy } from '../entities/FrogEnemy.js';
 import { HealthPickup } from '../entities/HealthPickup.js';
 import { MediumEnemy } from '../entities/MediumEnemy.js';
 import { Obstacle } from '../entities/Obstacle.js';
@@ -562,15 +563,18 @@ export class Game {
   }
 
   /**
-   * Spawn an enemy (flying, medium, tank, elite, or super elite)
+   * Spawn an enemy (flying, frog, medium, tank, elite, or super elite)
    */
   spawnEnemy() {
     const rand = Math.random();
-    if (rand < 0.45) {
-      // 45% chance for flying enemy
+    if (rand < 0.35) {
+      // 35% chance for flying enemy
       this.enemies.push(new FlyingEnemy(this.canvas, this.gameSpeed));
-    } else if (rand < 0.70) {
-      // 25% chance for medium enemy
+    } else if (rand < 0.55) {
+      // 20% chance for frog enemy (weak hopper)
+      this.enemies.push(new FrogEnemy(this.canvas, this.gameSpeed));
+    } else if (rand < 0.75) {
+      // 20% chance for medium enemy
       this.enemies.push(new MediumEnemy(this.canvas, this.gameSpeed));
     } else if (rand < 0.87) {
       // 17% chance for tank enemy
