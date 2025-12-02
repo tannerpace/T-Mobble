@@ -24,7 +24,7 @@ export class Dino {
     this.jumping = false;
 
     // Health system
-    this.maxHealth = 5;
+    this.maxHealth = 7;
     this.health = this.maxHealth;
     this.invulnerable = false;
     this.invulnerabilityTime = 120; // 2 seconds at 60fps
